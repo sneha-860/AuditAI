@@ -14,6 +14,7 @@ export interface Plan {
   id: string;
   name: string;
   monthlyPrice: number | null;
+  annualMonthly?: number | null;
   billingModel: BillingModel;
   description?: string;
 }
@@ -53,19 +54,60 @@ export interface AuditInput {
 export interface ToolResult {
   toolId: ToolId;
   toolName: string;
+  planName?: string;
   currentSpend: number;
   recommendedSpend: number;
   estimatedSavings: number;
   recommendation: string;
+  status?: "optimal" | "minor" | "action";
+  reason?: string;
 }
 
-export interface AuditResult {
+export type RecommendationCategory =
+  | "plan-fit"
+  | "redundancy"
+  | "alternative"
+  | "credits"
+  | "usage"
+  | "status";
+
+export type RecommendationConfidence = "high" | "medium" | "low";
+
+export interface AuditRecommendation {
+  id: string;
+  category: RecommendationCategory;
+  toolIds: ToolId[];
+  title: string;
+  action: string;
+  currentCost: number;
+  recommendedCost: number;
+  monthlySavings: number;
+  annualSavings: number;
+  confidence: RecommendationConfidence;
+  reason: string;
+  severity: "good" | "minor" | "action";
+}
+
+export interface CreditsOpportunity {
+  eligible: boolean;
+  prominent: boolean;
+  tools: string[];
+  message: string;
+}
+
+export interface AuditReport {
   totalMonthlySpend: number;
-  estimatedMonthlySavings: number;
-  estimatedAnnualSavings: number;
+  totalAnnualSpend: number;
+  totalMonthlySavings: number;
+  totalAnnualSavings: number;
+  healthScore: number;
   toolResults: ToolResult[];
+  recommendations: AuditRecommendation[];
+  creditsOpportunity?: CreditsOpportunity;
   summary: string;
 }
+
+export type AuditResult = AuditReport;
 
 export interface Lead {
   id?: string;
