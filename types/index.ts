@@ -114,7 +114,12 @@ export interface Lead {
   email: string;
   companyName?: string;
   name?: string;
+  role?: string;
+  teamSize?: number;
   auditInput: AuditInput;
   auditResult?: AuditResult;
+  auditData?: AuditReport;
+  shareToken?: string;
+  shareUrl?: string;
   createdAt?: string;
 }

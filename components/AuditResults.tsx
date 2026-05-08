@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Copy, Mail, TrendingDown, TriangleAlert } from "lucide-react";
+import { CheckCircle2, Copy, TrendingDown, TriangleAlert } from "lucide-react";
 import { LeadCapture } from "@/components/LeadCapture";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { analyzeSpend } from "@/lib/auditEngine";
 import { cn } from "@/lib/utils";
 import type { AuditInput, ToolResult } from "@/types";
@@ -72,15 +72,7 @@ export function AuditResults({ input }: { input: AuditInput }) {
         const response = await fetch("/api/summarize", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            fallbackSummary: report.summary,
-            prompt: `Summarize this AI spend audit in under 100 words, finance-literate and specific: ${JSON.stringify({
-              spend: report.totalMonthlySpend,
-              savings: report.totalMonthlySavings,
-              score: report.healthScore,
-              recommendations: report.recommendations.slice(0, 5).map((rec) => rec.reason)
-            })}`
-          })
+          body: JSON.stringify({ input, report })
         });
         const data = (await response.json()) as { summary?: string };
         if (!cancelled) {
@@ -102,7 +94,7 @@ export function AuditResults({ input }: { input: AuditInput }) {
     return () => {
       cancelled = true;
     };
-  }, [report]);
+  }, [input, report]);
 
   async function copyShareUrl() {
     const url = typeof window === "undefined" ? "" : window.location.href;
@@ -182,7 +174,7 @@ export function AuditResults({ input }: { input: AuditInput }) {
                         {tool.estimatedSavings > 0 ? `Save ${dollars(tool.estimatedSavings)}/mo` : "Good fit"}
                       </span>
                     </div>
-                    <p className="mt-3 text-base font-medium text-zinc-100">→ {tool.recommendation}</p>
+                    <p className="mt-3 text-base font-medium text-zinc-100">-&gt; {tool.recommendation}</p>
                     <p className="mt-2 text-sm leading-6 text-zinc-400">Reason: {tool.reason}</p>
                   </div>
                   <div className="rounded-md border border-white/10 bg-black/20 px-4 py-3 text-right">
@@ -209,14 +201,8 @@ export function AuditResults({ input }: { input: AuditInput }) {
       ) : null}
 
       <Card className="border-white/10 bg-white/[0.04]">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
-            <Mail className="h-5 w-5 text-[#00ff88]" aria-hidden="true" />
-            Get this report by email
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <LeadCapture />
+        <CardContent className="p-5 sm:p-6">
+          <LeadCapture input={input} report={report} summary={summary || report.summary} />
         </CardContent>
       </Card>
     </section>

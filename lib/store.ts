@@ -6,6 +6,7 @@ import { calculateMonthlySpend, TOOLS } from "@/lib/pricing";
 import type { AuditInput, ToolId, ToolInput } from "@/types";
 
 interface AuditStore extends AuditInput {
+  leadCaptureVisibleAt: number | null;
   setToolEnabled: (toolId: ToolId, enabled: boolean) => void;
   setToolPlan: (toolId: ToolId, planId: string) => void;
   setToolSeats: (toolId: ToolId, seats: number) => void;
@@ -14,6 +15,8 @@ interface AuditStore extends AuditInput {
   setTotalTeamSize: (totalTeamSize: number) => void;
   setPrimaryUseCase: (primaryUseCase: AuditInput["primaryUseCase"]) => void;
   setCompanyStage: (companyStage: AuditInput["companyStage"]) => void;
+  markLeadCaptureVisible: () => void;
+  getLeadCaptureVisibleForMs: () => number;
   getAuditInput: () => AuditInput;
 }
 
@@ -53,6 +56,7 @@ export const useAuditStore = create<AuditStore>()(
   persist(
     (set, get) => ({
       ...initialState,
+      leadCaptureVisibleAt: null,
       setToolEnabled: (toolId, enabled) =>
         set((state) => ({
           tools: {
@@ -120,6 +124,14 @@ export const useAuditStore = create<AuditStore>()(
       setTotalTeamSize: (totalTeamSize) => set({ totalTeamSize: positiveInteger(totalTeamSize) }),
       setPrimaryUseCase: (primaryUseCase) => set({ primaryUseCase }),
       setCompanyStage: (companyStage) => set({ companyStage }),
+      markLeadCaptureVisible: () =>
+        set((state) => ({
+          leadCaptureVisibleAt: state.leadCaptureVisibleAt ?? Date.now()
+        })),
+      getLeadCaptureVisibleForMs: () => {
+        const visibleAt = get().leadCaptureVisibleAt;
+        return visibleAt ? Date.now() - visibleAt : 0;
+      },
       getAuditInput: () => {
         const state = get();
 
