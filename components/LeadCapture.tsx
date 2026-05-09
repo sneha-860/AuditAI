@@ -27,6 +27,7 @@ export function LeadCapture({
   const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
   const [shareUrl, setShareUrl] = useState("");
+  const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [copyLabel, setCopyLabel] = useState("Copy Link");
   const isHighSavings = report.totalMonthlySavings > 500;
@@ -57,13 +58,14 @@ export function LeadCapture({
           }
         })
       });
-      const data = (await response.json()) as { error?: string; shareUrl?: string };
+      const data = (await response.json()) as { error?: string; shareUrl?: string | null };
 
       if (!response.ok) {
         setError(data.error ?? "Unable to send your report. Please try again.");
         return;
       }
 
+      setSubmitted(true);
       setShareUrl(data.shareUrl ?? "");
     } catch {
       setError("Unable to send your report. Please try again.");
@@ -83,23 +85,27 @@ export function LeadCapture({
     window.setTimeout(() => setCopyLabel("Copy Link"), 1600);
   }
 
-  if (shareUrl) {
+  if (submitted) {
     return (
       <div className="space-y-4">
         <div className="flex items-start gap-3 rounded-lg border border-[#00ff88]/35 bg-[#00ff88]/10 p-4">
           <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#00ff88]" aria-hidden="true" />
           <div>
             <h3 className="font-semibold text-white">Report sent</h3>
-            <p className="mt-1 text-sm text-zinc-300">Your shareable audit link is ready.</p>
+            <p className="mt-1 text-sm text-zinc-300">
+              {shareUrl ? "Your shareable audit link is ready." : "Your report was captured. Public sharing is enabled when Supabase is configured."}
+            </p>
           </div>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Input readOnly value={shareUrl} aria-label="Shareable audit URL" />
-          <Button type="button" onClick={copyLink} className="bg-[#00ff88] text-black hover:bg-[#00e67a]">
-            <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
-            {copyLabel}
-          </Button>
-        </div>
+        {shareUrl ? (
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Input readOnly value={shareUrl} aria-label="Shareable audit URL" />
+            <Button type="button" onClick={copyLink} className="bg-[#00ff88] text-black hover:bg-[#00e67a]">
+              <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
+              {copyLabel}
+            </Button>
+          </div>
+        ) : null}
       </div>
     );
   }

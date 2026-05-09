@@ -1,0 +1,8 @@
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://127.0.0.1:3000
+- Network:       http://127.0.0.1:3000
+✓ Ready in 465ms
+Creating turbopack project { dir: 'C:\\Projects\\Credex', testMode: true }
+
+ GET / 200 in 491ms (next.js: 164ms, application-code: 327ms)
+ GET / 200 in 102ms (next.js: 5ms, application-code: 97ms)

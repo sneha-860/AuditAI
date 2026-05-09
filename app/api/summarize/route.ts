@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sanitizeAuditReport } from "@/lib/auditPayload";
 import { buildFallbackSummary, generateAuditSummary } from "@/lib/auditSummary";
 import type { AuditInput, AuditReport } from "@/types";
 
@@ -35,18 +36,29 @@ highest-confidence recommendations first."
 */
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as { input?: AuditInput; report?: AuditReport };
+  let body: { input?: AuditInput; report?: AuditReport };
+
+  try {
+    body = (await request.json()) as { input?: AuditInput; report?: AuditReport };
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
+  }
 
   if (!body.input || !body.report) {
     return NextResponse.json({ error: "Audit input and report are required." }, { status: 400 });
   }
 
+  const report = sanitizeAuditReport(body.report);
+  if (!report) {
+    return NextResponse.json({ error: "A valid audit report is required." }, { status: 400 });
+  }
+
   const summary = await generateAuditSummary({
     input: body.input,
-    report: body.report
+    report
   });
 
   return NextResponse.json({
-    summary: summary || buildFallbackSummary({ input: body.input, report: body.report })
+    summary: summary || buildFallbackSummary({ input: body.input, report })
   });
 }

@@ -21,7 +21,7 @@ export default function AuditPage() {
   );
 
   return (
-    <main className="min-h-screen bg-[#0f0f0f] px-4 py-10 text-foreground sm:px-6 lg:px-8">
+    <main id="main-content" className="min-h-screen bg-[#0f0f0f] px-4 py-10 text-foreground sm:px-6 lg:px-8">
       <AuditResults input={auditInput} />
     </main>
   );

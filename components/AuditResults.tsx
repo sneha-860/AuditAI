@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Copy, TrendingDown, TriangleAlert } from "lucide-react";
+import { CheckCircle2, Copy, FileText, TrendingDown, TriangleAlert } from "lucide-react";
+import { HealthScoreTooltip } from "@/components/HealthScoreTooltip";
 import { LeadCapture } from "@/components/LeadCapture";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -62,6 +63,7 @@ export function AuditResults({ input }: { input: AuditInput }) {
   const [summary, setSummary] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [shareLabel, setShareLabel] = useState("Share My Audit");
+  const confettiShown = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,11 +98,31 @@ export function AuditResults({ input }: { input: AuditInput }) {
     };
   }, [input, report]);
 
+  useEffect(() => {
+    if (confettiShown.current || report.totalMonthlySavings <= 200) {
+      return;
+    }
+
+    confettiShown.current = true;
+    void import("canvas-confetti").then(({ default: confetti }) => {
+      confetti({
+        particleCount: 90,
+        spread: 68,
+        origin: { y: 0.18 },
+        colors: ["#00ff88", "#f5f5f5", "#facc15"]
+      });
+    });
+  }, [report.totalMonthlySavings]);
+
   async function copyShareUrl() {
     const url = typeof window === "undefined" ? "" : window.location.href;
     await navigator.clipboard.writeText(url);
     setShareLabel("Copied");
     window.setTimeout(() => setShareLabel("Share My Audit"), 1600);
+  }
+
+  function scrollToLeadCapture() {
+    document.getElementById("lead-capture")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   return (
@@ -117,7 +139,10 @@ export function AuditResults({ input }: { input: AuditInput }) {
             </p>
           </div>
           <div className="rounded-lg border border-white/10 bg-black/25 p-5">
-            <p className="text-sm text-muted-foreground">Health Score</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-muted-foreground">Health Score</p>
+              <HealthScoreTooltip />
+            </div>
             <div className="mt-3 flex items-end gap-3">
               <span className="text-5xl font-semibold text-white">{report.healthScore}</span>
               <span className="pb-2 text-xl text-zinc-400">/100</span>
@@ -145,11 +170,31 @@ export function AuditResults({ input }: { input: AuditInput }) {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-semibold text-white">Per-tool breakdown</h2>
-        <Button type="button" variant="secondary" onClick={copyShareUrl} className="border border-white/10">
-          <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
-          {shareLabel}
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button type="button" variant="secondary" onClick={copyShareUrl} className="border border-white/10">
+            <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
+            {shareLabel}
+          </Button>
+          <Button type="button" onClick={scrollToLeadCapture} className="bg-[#00ff88] text-black hover:bg-[#00e67a]">
+            <FileText className="mr-2 h-4 w-4" aria-hidden="true" />
+            Get Report
+          </Button>
+        </div>
       </div>
+
+      <Card className="border-white/10 bg-white/[0.04]">
+        <CardContent className="grid gap-3 p-5 sm:grid-cols-[auto_1fr] sm:items-center">
+          <div className="flex h-11 w-11 items-center justify-center rounded-md bg-[#00ff88]/15 text-[#00ff88]">
+            <TrendingDown className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-white">Compare to your industry</h2>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">
+              Engineering teams your size spend avg $45/dev/month on AI.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4">
         {report.toolResults.map((tool, index) => {
@@ -200,7 +245,7 @@ export function AuditResults({ input }: { input: AuditInput }) {
         </Card>
       ) : null}
 
-      <Card className="border-white/10 bg-white/[0.04]">
+      <Card id="lead-capture" className="scroll-mt-24 border-white/10 bg-white/[0.04]">
         <CardContent className="p-5 sm:p-6">
           <LeadCapture input={input} report={report} summary={summary || report.summary} />
         </CardContent>

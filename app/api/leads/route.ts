@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { sanitizeAuditReport } from "@/lib/auditPayload";
 import { generateAuditSummary } from "@/lib/auditSummary";
 import type { AuditInput, AuditReport } from "@/types";
 
@@ -26,7 +27,14 @@ type LeadRequest = {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as LeadRequest;
+  let body: LeadRequest;
+
+  try {
+    body = (await request.json()) as LeadRequest;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
+  }
+
   const email = body.email?.trim().toLowerCase() ?? "";
   const honeypotTriggered = Boolean(body.website?.trim());
 
@@ -36,6 +44,11 @@ export async function POST(request: Request) {
 
   if (!body.input || !body.report) {
     return NextResponse.json({ error: "Audit data is required." }, { status: 400 });
+  }
+
+  const report = sanitizeAuditReport(body.report);
+  if (!report) {
+    return NextResponse.json({ error: "A valid audit report is required." }, { status: 400 });
   }
 
   if ((body.visibleForMs ?? 0) < 3000) {
@@ -51,20 +64,24 @@ export async function POST(request: Request) {
   const shareToken = nanoid(10);
   const shareUrl = `/audit/share/${shareToken}`;
   const ipHash = hashIp(getClientIp(request));
-  const isHighValue = body.report.totalMonthlySavings > 500;
-  const summary = await generateAuditSummary({ input: body.input, report: body.report });
+  const isHighValue = report.totalMonthlySavings > 500;
+  const summary = await generateAuditSummary({ input: body.input, report });
+  const reportWithSummary: AuditReport = {
+    ...report,
+    summary
+  };
 
   if (!supabaseUrl || !serviceRoleKey) {
     await sendAuditEmail({
       email,
       companyName: body.companyName,
-      report: body.report,
+      report: reportWithSummary,
       summary,
-      shareUrl: absoluteUrl(request, shareUrl),
+      shareUrl: null,
       isHighValue
     });
 
-    return NextResponse.json({ ok: true, configured: false, shareUrl }, { status: 202 });
+    return NextResponse.json({ ok: true, configured: false, shareUrl: null }, { status: 202 });
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
@@ -88,8 +105,8 @@ export async function POST(request: Request) {
     company_name: body.companyName?.trim() || null,
     role: body.role || null,
     team_size: body.input.totalTeamSize,
-    audit_data: body.report,
-    total_monthly_savings: body.report.totalMonthlySavings,
+    audit_data: reportWithSummary,
+    total_monthly_savings: report.totalMonthlySavings,
     is_high_value: isHighValue,
     share_token: shareToken,
     ip_hash: ipHash,
@@ -103,7 +120,7 @@ export async function POST(request: Request) {
   await sendAuditEmail({
     email,
     companyName: body.companyName,
-    report: body.report,
+    report: reportWithSummary,
     summary,
     shareUrl: absoluteUrl(request, shareUrl),
     isHighValue
@@ -139,7 +156,7 @@ async function sendAuditEmail({
   companyName?: string;
   report: AuditReport;
   summary: string;
-  shareUrl: string;
+  shareUrl: string | null;
   isHighValue: boolean;
 }) {
   const apiKey = process.env.RESEND_API_KEY;
@@ -168,7 +185,7 @@ function buildEmailHtml({
   company: string;
   report: AuditReport;
   summary: string;
-  shareUrl: string;
+  shareUrl: string | null;
   isHighValue: boolean;
 }): string {
   const topRecommendations = report.recommendations
@@ -212,7 +229,11 @@ function buildEmailHtml({
               : "We'll notify you when new optimizations apply to your stack."
           }
         </p>
-        <a href="${shareUrl}" style="display:inline-block;margin-top:18px;background:#00ff88;color:#0f0f0f;text-decoration:none;font-weight:700;padding:12px 16px;border-radius:6px;">Open shareable audit</a>
+        ${
+          shareUrl
+            ? `<a href="${shareUrl}" style="display:inline-block;margin-top:18px;background:#00ff88;color:#0f0f0f;text-decoration:none;font-weight:700;padding:12px 16px;border-radius:6px;">Open shareable audit</a>`
+            : ""
+        }
         <p style="font-size:12px;color:#9ca3af;margin-top:28px;">Sent for ${escapeHtml(company)}.</p>
       </div>
     </div>`;

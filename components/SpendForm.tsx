@@ -33,18 +33,18 @@ function planLabel(toolId: ToolId, planId: string): string {
   const plan = getPlan(toolId, planId);
 
   if (plan.monthlyPrice === null) {
-    return plan.description ? `${plan.name} · ${plan.description}` : plan.name;
+    return plan.description ? `${plan.name} - ${plan.description}` : plan.name;
   }
 
   if (plan.billingModel === "included") {
-    return `${plan.name} · included`;
+    return `${plan.name} - included`;
   }
 
   if (plan.monthlyPrice === 0) {
-    return `${plan.name} · free`;
+    return `${plan.name} - free`;
   }
 
-  return `${plan.name} · ${currencyFormatter.format(plan.monthlyPrice)}/user/mo`;
+  return `${plan.name} - ${currencyFormatter.format(plan.monthlyPrice)}/user/mo`;
 }
 
 export function SpendForm() {
@@ -285,7 +285,7 @@ export function SpendForm() {
       </Card>
 
       <div className="flex flex-col gap-3 rounded-lg border border-primary/25 bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-primary">🔒 No signup required. We show you savings first.</p>
+        <p className="text-sm text-primary">No signup required. We show you savings first.</p>
         <Button type="submit" size="lg" className="w-full bg-[#00ff88] text-black hover:bg-[#00e67a] sm:w-auto">
           Calculate My Savings
           <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
