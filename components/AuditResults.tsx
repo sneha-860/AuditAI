@@ -8,17 +8,12 @@ import { LeadCapture } from "@/components/LeadCapture";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { analyzeSpend } from "@/lib/auditEngine";
+import { formatDollars } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { AuditInput, ToolResult } from "@/types";
 
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0
-});
-
 function dollars(value: number): string {
-  return currencyFormatter.format(value);
+  return formatDollars(value);
 }
 
 function scoreTone(score: number): { label: string; className: string } {

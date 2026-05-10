@@ -95,6 +95,7 @@ export function sanitizeAuditReport(value: unknown): AuditReport | null {
     totalAnnualSpend: numberValue(report.totalAnnualSpend),
     totalMonthlySavings: numberValue(report.totalMonthlySavings),
     totalAnnualSavings: numberValue(report.totalAnnualSavings),
+    isHighValue: Boolean(report.isHighValue),
     healthScore: Math.max(0, Math.min(100, numberValue(report.healthScore))),
     toolResults,
     recommendations,

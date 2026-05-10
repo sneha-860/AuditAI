@@ -61,6 +61,7 @@ export function analyzeSpend(input: AuditInput): AuditReport {
 
   const totalMonthlySpend = money(enabledTools.reduce((sum, tool) => sum + tool.monthlySpend, 0));
   const creditsOpportunity = buildCreditsOpportunity(enabledTools, totalMonthlySpend);
+  const isHighValue = totalMonthlySpend > 500;
 
   if (creditsOpportunity?.eligible) {
     recommendations.push({
@@ -73,7 +74,7 @@ export function analyzeSpend(input: AuditInput): AuditReport {
       recommendedCost: money(totalMonthlySpend * 0.8),
       monthlySavings: money(totalMonthlySpend * 0.2),
       annualSavings: money(totalMonthlySpend * 0.2 * 12),
-      confidence: totalMonthlySpend > 500 ? "medium" : "low",
+      confidence: isHighValue ? "medium" : "low",
       reason: creditsOpportunity.message,
       severity: creditsOpportunity.prominent ? "action" : "minor"
     });
@@ -88,6 +89,7 @@ export function analyzeSpend(input: AuditInput): AuditReport {
     totalAnnualSpend: money(totalMonthlySpend * 12),
     totalMonthlySavings,
     totalAnnualSavings: money(totalMonthlySavings * 12),
+    isHighValue,
     healthScore,
     toolResults,
     recommendations,
@@ -136,25 +138,32 @@ function analyzePlanFit(tool: EnabledTool, input: AuditInput, health: HealthDedu
     if (spendPerUser < 15 && tool.monthlySpend > 0) {
       const subscriptionCost = money(Math.min(input.totalTeamSize, Math.max(1, tool.seats)) * 20);
       const recommendedCost = Math.min(tool.monthlySpend, subscriptionCost);
+      const isAnthropicWriting = tool.toolId === "anthropic-api" && input.primaryUseCase === "Writing";
 
       recommendations.push(createRecommendation({
         id: `${tool.toolId}-api-subscription-check`,
         category: "plan-fit",
         toolIds: [tool.toolId],
-        title: `${tool.name} API usage is light`,
-        action: subscriptionCost < tool.monthlySpend ? "Compare against per-seat subscriptions" : "Keep API direct for now",
+        title: isAnthropicWriting ? "Claude Pro may offer more value than light API spend" : `${tool.name} API usage is light`,
+        action: isAnthropicWriting
+          ? "Consider Claude Pro at $20/mo for more writing value"
+          : subscriptionCost < tool.monthlySpend
+            ? "Compare against per-seat subscriptions"
+            : "Keep API direct for now",
         currentCost: tool.monthlySpend,
         recommendedCost,
         monthlySavings: money(tool.monthlySpend - recommendedCost),
         confidence: "low",
         severity: "minor",
-        reason: `${tool.name} averages ${usd(spendPerUser)}/user/mo, below the $15/user/mo review threshold for API-versus-seat economics.`
+        reason: isAnthropicWriting
+          ? `${tool.name} is only ${usd(tool.monthlySpend)}/mo, below the $15/user/mo review threshold; Claude Pro at $20/mo may be the better writing workflow even when it does not reduce spend.`
+          : `${tool.name} averages ${usd(spendPerUser)}/user/mo, below the $15/user/mo review threshold for API-versus-seat economics.`
       }));
     }
   }
 
-  if (tool.seats > input.totalTeamSize * 0.8 && tool.seats > 1) {
-    const likelyUnusedSeats = Math.max(1, tool.seats - Math.ceil(input.totalTeamSize * 0.8));
+  if (tool.seats > input.totalTeamSize && tool.seats > 1) {
+    const likelyUnusedSeats = tool.seats - input.totalTeamSize;
     const recommendedCost = money(Math.max(1, tool.seats - likelyUnusedSeats) * unitPrice);
     const monthlySavings = money(tool.monthlySpend - recommendedCost);
 
@@ -171,7 +180,7 @@ function analyzePlanFit(tool: EnabledTool, input: AuditInput, health: HealthDedu
         monthlySavings,
         confidence: "medium",
         severity: "minor",
-        reason: `${tool.seats} ${tool.name} seats cover more than 80% of a ${input.totalTeamSize}-person team, which is unusually high unless everyone uses it weekly.`
+        reason: `${tool.seats} ${tool.name} seats for a ${input.totalTeamSize}-person team leaves ${likelyUnusedSeats} likely unused seat${likelyUnusedSeats === 1 ? "" : "s"}.`
       }));
     }
   }

@@ -1,4 +1,5 @@
 import type { AuditInput, AuditReport } from "@/types";
+import { formatDollars } from "@/lib/format";
 
 export type AuditSummaryPayload = {
   input: AuditInput;
@@ -37,7 +38,7 @@ export function buildFallbackSummary({ input: _input, report }: AuditSummaryPayl
   const issues = report.recommendations.filter((recommendation) => recommendation.monthlySavings > 0);
   const topFinding = issues[0]?.title ?? report.toolResults[0]?.recommendation ?? "reviewing your highest-confidence recommendations";
 
-  return `Your team is spending $${report.totalMonthlySpend}/month on AI tools. Our audit found ${issues.length} optimization opportunities totaling $${report.totalMonthlySavings}/month ($${report.totalMonthlySavings * 12}/year) in potential savings. The biggest opportunity is ${topFinding}. Review the breakdown below and consider acting on the highest-confidence recommendations first.`;
+  return `Your team is spending ${formatDollars(report.totalMonthlySpend)}/month on AI tools. Our audit found ${issues.length} optimization opportunities totaling ${formatDollars(report.totalMonthlySavings)}/month (${formatDollars(report.totalMonthlySavings * 12)}/year) in potential savings. The biggest opportunity is ${topFinding}. Review the breakdown below and consider acting on the highest-confidence recommendations first.`;
 }
 
 export async function generateAuditSummary(payload: AuditSummaryPayload): Promise<string> {

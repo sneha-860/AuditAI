@@ -100,6 +100,7 @@ export interface AuditReport {
   totalAnnualSpend: number;
   totalMonthlySavings: number;
   totalAnnualSavings: number;
+  isHighValue: boolean;
   healthScore: number;
   toolResults: ToolResult[];
   recommendations: AuditRecommendation[];

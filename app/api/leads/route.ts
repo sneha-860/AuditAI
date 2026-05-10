@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { sanitizeAuditReport } from "@/lib/auditPayload";
 import { generateAuditSummary } from "@/lib/auditSummary";
+import { formatDollars } from "@/lib/format";
 import type { AuditInput, AuditReport } from "@/types";
 
 /*
@@ -170,7 +171,7 @@ async function sendAuditEmail({
   await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL ?? "Credex <onboarding@resend.dev>",
     to: email,
-    subject: `Your AI Spend Audit - ${company} saves $${report.totalMonthlySavings}/month`,
+    subject: `Your AI Spend Audit - ${company} saves ${formatDollars(report.totalMonthlySavings)}/month`,
     html: buildEmailHtml({ company, report, summary, shareUrl, isHighValue })
   });
 }
@@ -200,8 +201,8 @@ function buildEmailHtml({
         <p style="line-height:1.7;color:#d4d4d4;">${escapeHtml(summary)}</p>
         <div style="margin:28px 0;padding:20px;border-radius:8px;background:#00ff881a;border:1px solid #00ff8866;">
           <div style="font-size:14px;color:#9ca3af;">Total potential savings</div>
-          <div style="font-size:36px;font-weight:800;color:#00ff88;">$${report.totalMonthlySavings}/month</div>
-          <div style="font-size:16px;color:#d4d4d4;">$${report.totalAnnualSavings}/year</div>
+          <div style="font-size:36px;font-weight:800;color:#00ff88;">${formatDollars(report.totalMonthlySavings)}/month</div>
+          <div style="font-size:16px;color:#d4d4d4;">${formatDollars(report.totalAnnualSavings)}/year</div>
         </div>
         <table style="width:100%;border-collapse:collapse;margin-top:20px;">
           <thead>
@@ -216,7 +217,7 @@ function buildEmailHtml({
                 (rec) => `
                   <tr>
                     <td style="padding:12px 10px;border-bottom:1px solid #292929;color:#f5f5f5;">${escapeHtml(rec.action)}</td>
-                    <td align="right" style="padding:12px 10px;border-bottom:1px solid #292929;color:#00ff88;">$${rec.monthlySavings}/mo</td>
+                    <td align="right" style="padding:12px 10px;border-bottom:1px solid #292929;color:#00ff88;">${formatDollars(rec.monthlySavings)}/mo</td>
                   </tr>`
               )
               .join("")}
