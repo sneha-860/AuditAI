@@ -3,13 +3,29 @@ import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AuditAI - AI Spend Audit",
-  description: "Free 60-second audit showing where your startup is wasting money on AI subscriptions.",
-  metadataBase: new URL("https://credex.rocks"),
+  title: "AuditAI — Stop Overpaying for AI Tools",
+  description: "Free 60-second audit shows exactly where your startup is wasting money on AI subscriptions.",
+  metadataBase: new URL("https://credex-assignment-vercel.vercel.app"),
   openGraph: {
-    title: "AuditAI - Stop Overpaying for AI Tools",
-    description: "Free 60-second audit showing exactly where your startup is wasting money on AI subscriptions.",
+    title: "AuditAI — Stop Overpaying for AI Tools",
+    description: "Free 60-second audit shows exactly where your startup is wasting money on AI subscriptions.",
+    url: "https://credex-assignment-vercel.vercel.app",
+    siteName: "AuditAI",
+    images: [
+      {
+        url: "https://credex-assignment-vercel.vercel.app/api/og",
+        width: 1200,
+        height: 630,
+        alt: "AuditAI — Stop Overpaying for AI Tools"
+      }
+    ],
     type: "website"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AuditAI — Stop Overpaying for AI Tools",
+    description: "Free 60-second audit shows exactly where your startup is wasting money on AI subscriptions.",
+    images: ["https://credex-assignment-vercel.vercel.app/api/og"]
   }
 };
 

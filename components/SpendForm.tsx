@@ -133,7 +133,7 @@ export function SpendForm() {
                           "h-[34px] w-20 shrink-0 rounded-md border px-2 text-right text-[13px]",
                           state.enabled
                             ? "border-[#00e87a] bg-[#0f2a1e] font-medium text-[#00e87a]"
-                            : "border-[#2a2a2a] bg-[#1a1a1a] text-[#666]"
+                            : "pointer-events-none border-[#161616] bg-[#111] text-[#2a2a2a]"
                         )}
                       />
                     </>
@@ -147,7 +147,7 @@ export function SpendForm() {
                               "h-[34px] w-full rounded-md px-[10px] py-0 text-[12px]",
                               state.enabled
                                 ? "border border-[#00e87a] bg-[#0f2a1e] font-medium text-[#00e87a]"
-                                : "border-[0.5px] border-[#2a2a2a] bg-[#1a1a1a] text-[#666]"
+                                : "pointer-events-none border-[0.5px] border-[#161616] bg-[#1a1a1a] text-[#666] opacity-30"
                             )}
                           >
                             <SelectValue />
@@ -177,15 +177,19 @@ export function SpendForm() {
                             "h-[34px] w-[52px] rounded-md px-1 text-center text-[12px]",
                             state.enabled
                               ? "border border-[#00e87a] bg-[#0f2a1e] font-medium text-[#00e87a]"
-                              : "border-[0.5px] border-[#2a2a2a] bg-[#1a1a1a] text-[#666]"
+                              : "pointer-events-none border-[0.5px] border-[#161616] bg-[#1a1a1a] text-[#2a2a2a]"
                           )}
                         />
                       </div>
                       <div className="flex w-[60px] shrink-0 items-baseline justify-end">
-                        <span className={cn("text-[13px] font-medium", state.enabled ? "text-[#00e87a]" : "text-[#666]")}>
-                          ${Math.round(state.monthlySpend)}
-                        </span>
-                        <span className="ml-[2px] text-[10px] text-[#666]">/mo</span>
+                        {state.enabled ? (
+                          <>
+                            <span className="text-[13px] font-semibold text-[#00e87a]">${Math.round(state.monthlySpend)}</span>
+                            <span className="ml-[2px] text-[10px] text-[#666]">/mo</span>
+                          </>
+                        ) : (
+                          <span className="text-[13px] text-[#2a2a2a]">—</span>
+                        )}
                       </div>
                     </>
                   )}

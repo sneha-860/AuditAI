@@ -28,13 +28,20 @@ export async function generateMetadata({ params }: SharedAuditPageProps): Promis
     return { title: "Audit not found | AuditAI", description: "This audit link may have expired or does not exist.", robots: { index: false, follow: false } };
   }
   const siteOrigin = getSiteOrigin();
-  const title = `AI spend audit: ${formatDollars(report.totalMonthlySavings)}/month savings found`;
-  const description = `${report.toolResults.length} tools audited. ${countOptimizations(report)} optimizations found.`;
-  const imageUrl = `${siteOrigin}/api/og?token=${encodeURIComponent(token)}`;
+  const savings = Math.round(report.totalMonthlySavings);
+  const title = `I could save $${savings}/month on AI tools`;
+  const description = `${report.toolResults.length} AI tools audited. $${savings}/month in potential savings found.`;
+  const imageUrl = `${siteOrigin}/api/og?savings=${encodeURIComponent(String(savings))}`;
   return {
     title,
     description,
-    openGraph: { title, description, type: "website", url: `${siteOrigin}/audit/share/${token}`, images: [{ url: imageUrl, width: 1200, height: 630, alt: "AuditAI savings report" }] },
+    openGraph: {
+      title,
+      description: `${report.toolResults.length} tools audited. Free audit at AuditAI.`,
+      type: "website",
+      url: `${siteOrigin}/audit/share/${token}`,
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: title }]
+    },
     twitter: { card: "summary_large_image", title, description, images: [imageUrl] }
   };
 }

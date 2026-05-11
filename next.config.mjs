@@ -1,6 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  async redirects() {
+    return [
+      {
+        source: "/pricing-data",
+        destination: "/PRICING_DATA.md",
+        permanent: false
+      }
+    ];
+  },
   async headers() {
     return [
       {
