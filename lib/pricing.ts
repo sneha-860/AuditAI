@@ -1,6 +1,6 @@
 import type { CompanyStage, Plan, PrimaryUseCase, Tool, ToolId } from "@/types";
 
-export const ACCENT_GREEN = "#00ff88";
+export const ACCENT_GREEN = "#00e87a";
 
 type PlanPricing = {
   monthly: number | null;

@@ -37,7 +37,8 @@ export function getEnabledTools(input: AuditInput): EnabledTool[] {
         ...tool,
         name: TOOL_MAP[tool.toolId].name,
         planName: plan.name,
-        unitPrice: getPlanMonthlyPrice(tool.toolId, tool.planId)
+        unitPrice: getPlanMonthlyPrice(tool.toolId, tool.planId),
+        monthlySpend: getToolSpend(tool)
       };
     });
 }
@@ -82,7 +83,7 @@ export function analyzeSpend(input: AuditInput): AuditReport {
 
   const totalMonthlySavings = money(recommendations.reduce((sum, rec) => sum + Math.max(0, rec.monthlySavings), 0));
   const toolResults = buildToolResults(enabledTools, recommendations);
-  const healthScore = calculateHealthScore(health);
+  const healthScore = calculateHealthScore(totalMonthlySpend, totalMonthlySavings, health);
 
   return {
     totalMonthlySpend,
@@ -348,13 +349,26 @@ function buildCreditsOpportunity(enabledTools: EnabledTool[], totalMonthlySpend:
   };
 }
 
-function calculateHealthScore(health: HealthDeductions): number {
-  const score =
-    100 -
-    health.redundantPairs * 15 -
-    health.planMismatches * 10 -
-    health.unusedSeatClusters * 5 +
-    (health.hasApiDirect ? 10 : 0);
+export function getToolSpend(tool: ToolInput): number {
+  if (tool.monthlySpend > 0) return tool.monthlySpend;
+
+  const monthlyPrice = getPlanMonthlyPrice(tool.toolId, tool.planId);
+  if (monthlyPrice !== null && monthlyPrice !== undefined) {
+    return money(monthlyPrice * Math.max(1, tool.seats));
+  }
+
+  return 0;
+}
+
+function calculateHealthScore(totalMonthlySpend: number, totalMonthlySavings: number, health: HealthDeductions): number {
+  if (totalMonthlySpend === 0) return 100;
+
+  let score = 100;
+  const wasteRatio = totalMonthlySavings / totalMonthlySpend;
+  score -= Math.round(wasteRatio * 60);
+  score -= health.redundantPairs * 15;
+  score -= health.planMismatches * 10;
+  score -= health.unusedSeatClusters * 8;
 
   return Math.max(0, Math.min(100, score));
 }

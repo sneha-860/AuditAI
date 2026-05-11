@@ -21,6 +21,7 @@ jobs:
       - run: npm run test -- --run
       - name: Check test count
         run: |
-          COUNT=$(npm run test -- --run --reporter=verbose 2>&1 | grep -Ec "^[[:space:]]*✓")
+          npm run test -- --run --reporter=json --outputFile=test-results.json
+          COUNT=$(node -e "const r=require('./test-results.json'); console.log(r.numTotalTests || 0)")
           echo "Tests passed: $COUNT"
           [ $COUNT -ge 10 ] || (echo "Need at least 10 tests" && exit 1)

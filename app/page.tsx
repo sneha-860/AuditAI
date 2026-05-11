@@ -1,128 +1,92 @@
-import { ArrowDown, BarChart3, ClipboardList, Share2 } from "lucide-react";
+"use client";
+
+import { motion } from "framer-motion";
+import { BarChart3, ClipboardList, Lock, Share2 } from "lucide-react";
 import { SpendForm } from "@/components/SpendForm";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 
 const HOW_IT_WORKS = [
   {
-    title: "Enter your AI tools",
-    body: "Pick the products, plans, and seats you already pay for.",
-    meta: "30 seconds",
+    title: "Enter your tools (30 sec)",
+    body: "Select which AI tools you pay for, your plan, and team size.",
     icon: ClipboardList
   },
   {
     title: "Get instant analysis",
-    body: "See plan mismatches, overlap, and credit opportunities before signup.",
-    meta: "no signup",
+    body: "Our rules-based engine compares your spend against current pricing data.",
     icon: BarChart3
   },
   {
-    title: "Save money, share your audit",
-    body: "Send the report to finance, ops, or your team in one clean link.",
-    meta: "shareable",
+    title: "Save money + share",
+    body: "Get a personalized report by email. Share your audit via unique link.",
     icon: Share2
-  }
-];
-
-const FAQS = [
-  {
-    question: "Is this really free?",
-    answer: "Yes. You can run the audit and see savings before entering an email."
-  },
-  {
-    question: "What tools does Credex audit?",
-    answer: "The audit covers common AI subscriptions and API spend across coding, assistant, workspace, and model-provider tools."
-  },
-  {
-    question: "How accurate are the savings estimates?",
-    answer: "Savings are deterministic estimates based on current plan prices, seat counts, overlap, and practical procurement rules."
-  },
-  {
-    question: "Do you store private company data?",
-    answer: "Shared public pages only expose the audit report. Lead details like email, company, and role are never rendered there."
-  },
-  {
-    question: "Is Credex affiliated with these AI vendors?",
-    answer: "No. Credex is independent and not affiliated with any AI tool vendor."
   }
 ];
 
 export default function LandingPage() {
   return (
-    <main id="main-content" className="min-h-screen bg-[#0f0f0f] text-foreground">
-      <section className="mx-auto flex min-h-[72vh] w-full max-w-6xl flex-col justify-center px-4 py-16 sm:px-6 lg:px-8">
-        <div className="max-w-3xl">
-          <p className="mb-5 inline-flex rounded-md border border-[#00ff88]/30 bg-[#00ff88]/10 px-3 py-1 text-sm font-semibold text-[#00ff88]">
-            Credex AI spend audit
-          </p>
-          <h1 className="text-5xl font-semibold tracking-normal text-white sm:text-6xl lg:text-7xl">
-            Are You Overpaying for AI?
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-xl">
-            Get a free 60-second audit of your AI tool spend. No signup required.
-          </p>
-          <Button asChild size="lg" className="mt-9 bg-[#00ff88] text-black hover:bg-[#00e67a]">
-            <a href="#spend-form">
-              Start free audit
-              <ArrowDown className="ml-2 h-4 w-4" aria-hidden="true" />
-            </a>
-          </Button>
+    <motion.main
+      id="main-content"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="min-h-screen bg-[#0a0a0a] text-white"
+    >
+      <section className="px-6 pb-[72px] pt-24 text-center">
+        <p className="inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.12em] text-[#00e87a]/85">
+          <span className="h-1 w-1 rounded-full bg-[#00e87a]" aria-hidden="true" />
+          Free &middot; No signup &middot; Instant results
+        </p>
+        <h1 className="mx-auto mt-5 max-w-[640px] text-[32px] font-semibold leading-[1.1] text-white md:text-[48px] lg:text-[56px]">
+          Stop Overpaying
+          <br />
+          for <span className="text-[#00e87a]">AI Tools</span>
+        </h1>
+        <p className="mx-auto mb-8 mt-5 max-w-[480px] text-[16px] font-normal leading-[1.65] text-[#aaa]">
+          Free 60-second audit shows exactly where your startup is wasting money on AI subscriptions.
+        </p>
+        <a
+          href="#spend-form"
+          className="inline-flex rounded-[10px] bg-[#00e87a] px-10 py-4 text-[15px] font-semibold text-black transition hover:-translate-y-px hover:bg-[#00d970] active:translate-y-0"
+        >
+          Audit My AI Spend &rarr;
+        </a>
+        <p className="mt-4 inline-flex items-center justify-center gap-[6px] text-[12px] text-[#666]">
+          <Lock className="h-3 w-3 text-[#00e87a]/70" aria-hidden="true" />
+          No signup required. We show you savings first.
+        </p>
+      </section>
+
+      <section className="audit-border border-y border-[#1e1e1e] bg-[#0f0f0f] px-6 py-[14px]">
+        {/* Mocked social proof for launch. */}
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-center gap-x-10 gap-y-2 text-[13px]">
+          <span><span className="font-medium text-[#ccc]">847</span><span className="text-[#555]"> audits run</span></span>
+          <span className="text-[18px] text-[#444]" aria-hidden="true">&middot;</span>
+          <span><span className="font-medium text-[#ccc]">$2.3M</span><span className="text-[#555]"> in savings found</span></span>
+          <span className="text-[18px] text-[#444]" aria-hidden="true">&middot;</span>
+          <span><span className="text-[#555]">Avg save: </span><span className="font-medium text-[#ccc]">$180/mo</span></span>
         </div>
       </section>
 
-      <section className="border-y border-white/10 bg-white/[0.03] px-4 py-5 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl text-center text-sm font-semibold text-zinc-300">
-          {/* Mocked social proof until live analytics and savings totals are connected. */}
-          847 audits run · $2.3M in savings identified
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col gap-2">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#00ff88]">How it works</p>
-          <h2 className="text-3xl font-semibold text-white">From messy spend to a finance-ready audit.</h2>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
+      <section id="how-it-works" className="mx-auto max-w-[1100px] px-6 py-12">
+        <h2 className="mb-10 text-center text-[18px] font-medium text-white">How it works</h2>
+        <div className="grid gap-3 md:grid-cols-3">
           {HOW_IT_WORKS.map((step, index) => {
             const Icon = step.icon;
-
             return (
-              <Card key={step.title} className="border-white/10 bg-white/[0.04]">
-                <CardContent className="p-5">
-                  <div className="mb-6 flex items-center justify-between">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#00ff88]/15 text-[#00ff88]">
-                      <Icon className="h-5 w-5" aria-hidden="true" />
-                    </span>
-                    <span className="text-sm text-zinc-500">0{index + 1}</span>
-                  </div>
-                  <h3 className="text-lg font-semibold text-white">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-zinc-400">{step.body}</p>
-                  <p className="mt-4 text-sm font-semibold text-[#00ff88]">{step.meta}</p>
-                </CardContent>
-              </Card>
+              <div key={step.title} className="audit-border rounded-xl border-[#1e1e1e] bg-[#111] p-5">
+                <div className="mb-4 text-[13px] font-medium text-[#444]">0{index + 1}</div>
+                <Icon className="mb-3 h-[22px] w-[22px] text-[#00e87a]" aria-hidden="true" />
+                <h3 className="mb-2 mt-[14px] text-[15px] font-medium text-white">{step.title}</h3>
+                <p className="text-[13px] leading-[1.6] text-[#888]">{step.body}</p>
+              </div>
             );
           })}
         </div>
       </section>
 
-      <section className="px-4 pb-16 sm:px-6 lg:px-8">
+      <section className="pb-20 pt-0">
         <SpendForm />
       </section>
-
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#00ff88]">FAQ</p>
-          <h2 className="mt-2 text-3xl font-semibold text-white">Common questions</h2>
-        </div>
-        <div className="grid gap-3">
-          {FAQS.map((faq) => (
-            <details key={faq.question} className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-              <summary className="cursor-pointer text-base font-semibold text-white">{faq.question}</summary>
-              <p className="mt-3 text-sm leading-6 text-zinc-400">{faq.answer}</p>
-            </details>
-          ))}
-        </div>
-      </section>
-    </main>
+    </motion.main>
   );
 }

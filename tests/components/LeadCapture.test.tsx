@@ -65,8 +65,8 @@ describe("LeadCapture", () => {
 
     const honeypot = screen.getByLabelText("Website");
     expect(honeypot).toBeInTheDocument();
-    expect(honeypot.parentElement).toHaveClass("hidden");
-    expect(honeypot.parentElement).toHaveAttribute("aria-hidden", "true");
+    expect(honeypot).toHaveStyle({ position: "absolute", left: "-9999px", opacity: "0", height: "0px" });
+    expect(honeypot).toHaveAttribute("aria-hidden", "true");
   });
 
   test("Submit disabled until email is valid", async () => {
@@ -97,6 +97,6 @@ describe("LeadCapture", () => {
     await user.click(screen.getByRole("button", { name: /send my report/i }));
 
     expect(await screen.findByText("Report sent")).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByLabelText("Shareable audit URL")).toHaveValue("/audit/share/test-token"));
+    await waitFor(() => expect(screen.getByLabelText("Shareable audit URL")).toHaveValue("http://localhost:3000/audit/share/test-token"));
   });
 });

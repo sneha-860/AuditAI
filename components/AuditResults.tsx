@@ -1,68 +1,56 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { CheckCircle2, Copy, FileText, TrendingDown, TriangleAlert } from "lucide-react";
-import { HealthScoreTooltip } from "@/components/HealthScoreTooltip";
-import { LeadCapture } from "@/components/LeadCapture";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { motion, useReducedMotion } from "framer-motion";
+import Link from "next/link";
 import { analyzeSpend } from "@/lib/auditEngine";
 import { formatDollars } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { LeadCapture } from "@/components/LeadCapture";
 import type { AuditInput, ToolResult } from "@/types";
 
-function dollars(value: number): string {
-  return formatDollars(value);
+function tone(score: number) {
+  if (score >= 80) return { color: "#22c55e" };
+  if (score >= 50) return { color: "#f59e0b" };
+  return { color: "#ef4444" };
 }
 
-function scoreTone(score: number): { label: string; className: string } {
-  if (score >= 85) {
-    return { label: "Green", className: "border-[#00ff88]/40 bg-[#00ff88]/15 text-[#00ff88]" };
-  }
-
-  if (score >= 65) {
-    return { label: "Yellow", className: "border-yellow-400/40 bg-yellow-400/15 text-yellow-200" };
-  }
-
-  return { label: "Red", className: "border-red-400/40 bg-red-500/15 text-red-200" };
+function cardTone(status: ToolResult["status"]) {
+  if (status === "action") return { wrap: "border-[#3d1515] border-l-[#ef4444] bg-[#110a0a]", action: "Drop", prefix: "→", color: "text-[#f87171]", save: "text-[#ef4444]" };
+  if (status === "minor") return { wrap: "border-[#302510] border-l-[#f59e0b] bg-[#110f07]", action: "Change", prefix: "→", color: "text-[#fbbf24]", save: "text-[#f59e0b]" };
+  return { wrap: "border-[#133322] border-l-[#22c55e] bg-[#0a110d]", action: "Optimal", prefix: "✓", color: "text-[#4ade80]", save: "text-[#22c55e]" };
 }
 
-function resultStyle(status: ToolResult["status"]) {
-  if (status === "action") {
-    return {
-      border: "border-red-400/55",
-      icon: <TriangleAlert className="h-5 w-5 text-red-300" aria-hidden="true" />,
-      badge: "bg-red-500/15 text-red-200"
-    };
-  }
+function CountUp({ value }: { value: number }) {
+  const reduced = useReducedMotion();
+  const [display, setDisplay] = useState(0);
 
-  if (status === "minor") {
-    return {
-      border: "border-yellow-400/55",
-      icon: <TrendingDown className="h-5 w-5 text-yellow-200" aria-hidden="true" />,
-      badge: "bg-yellow-400/15 text-yellow-100"
+  useEffect(() => {
+    if (reduced) return;
+    let frame = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - start) / 1200);
+      setDisplay(Math.round(value * (1 - Math.pow(1 - progress, 3))));
+      if (progress < 1) frame = requestAnimationFrame(tick);
     };
-  }
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [reduced, value]);
 
-  return {
-    border: "border-[#00ff88]/45",
-    icon: <CheckCircle2 className="h-5 w-5 text-[#00ff88]" aria-hidden="true" />,
-    badge: "bg-[#00ff88]/15 text-[#00ff88]"
-  };
+  return <>{formatDollars(reduced ? value : display)}</>;
 }
 
 export function AuditResults({ input }: { input: AuditInput }) {
   const report = useMemo(() => analyzeSpend(input), [input]);
-  const score = scoreTone(report.healthScore);
   const [summary, setSummary] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(true);
-  const [shareLabel, setShareLabel] = useState("Share My Audit");
   const confettiShown = useRef(false);
+  const reduced = useReducedMotion();
+  const score = tone(report.healthScore);
 
   useEffect(() => {
     let cancelled = false;
-
     async function summarize() {
       setSummaryLoading(true);
       try {
@@ -72,179 +60,156 @@ export function AuditResults({ input }: { input: AuditInput }) {
           body: JSON.stringify({ input, report })
         });
         const data = (await response.json()) as { summary?: string };
-        if (!cancelled) {
-          setSummary(data.summary?.trim() || report.summary);
-        }
+        if (!cancelled) setSummary(data.summary?.trim() || report.summary);
       } catch {
-        if (!cancelled) {
-          setSummary(report.summary);
-        }
+        if (!cancelled) setSummary(report.summary);
       } finally {
-        if (!cancelled) {
-          setSummaryLoading(false);
-        }
+        if (!cancelled) setSummaryLoading(false);
       }
     }
-
     void summarize();
-
     return () => {
       cancelled = true;
     };
   }, [input, report]);
 
   useEffect(() => {
-    if (confettiShown.current || report.totalMonthlySavings <= 200) {
-      return;
-    }
-
+    if (reduced || confettiShown.current || report.totalMonthlySavings <= 200) return;
     confettiShown.current = true;
     void import("canvas-confetti").then(({ default: confetti }) => {
-      confetti({
-        particleCount: 90,
-        spread: 68,
-        origin: { y: 0.18 },
-        colors: ["#00ff88", "#f5f5f5", "#facc15"]
-      });
+      confetti({ particleCount: 90, spread: 68, origin: { y: 0.18 }, colors: ["#00e87a", "#ffffff", "#8b5cf6"] });
     });
-  }, [report.totalMonthlySavings]);
+  }, [reduced, report.totalMonthlySavings]);
 
-  async function copyShareUrl() {
-    const url = typeof window === "undefined" ? "" : window.location.href;
-    await navigator.clipboard.writeText(url);
-    setShareLabel("Copied");
-    window.setTimeout(() => setShareLabel("Share My Audit"), 1600);
-  }
-
-  function scrollToLeadCapture() {
-    document.getElementById("lead-capture")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (report.toolResults.length === 0) {
+    return (
+      <section className="mx-auto flex min-h-[60vh] max-w-[900px] items-center justify-center px-6 sm:px-12">
+        <div className="rounded-xl border-[0.5px] border-[#1e1e1e] bg-[#111] p-8 text-center">
+          <h1 className="text-[18px] font-medium text-white">Add at least one AI tool to run an audit</h1>
+          <p className="mt-3 text-[12px] leading-[1.6] text-[#aaa]">The audit needs one enabled tool to calculate spend and savings.</p>
+          <Link className="mt-6 inline-flex rounded-lg bg-[#00e87a] px-5 py-3 text-[13px] font-semibold text-black" href="/#spend-form">
+            Back to audit form
+          </Link>
+        </div>
+      </section>
+    );
   }
 
   return (
-    <section className="mx-auto max-w-6xl space-y-5">
-      <Card className="overflow-hidden border-[#00ff88]/35 bg-[#00ff88]/10 shadow-[0_0_60px_rgba(0,255,136,0.08)]">
-        <CardContent className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1.3fr_0.7fr] lg:items-center">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#00ff88]">AI spend audit</p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-normal text-white sm:text-6xl">
-              You could save {dollars(report.totalMonthlySavings)}/mo
-            </h1>
-            <p className="mt-4 text-xl text-zinc-300">
-              {dollars(report.totalAnnualSavings)}/year in deterministic, finance-reviewable optimizations.
-            </p>
-          </div>
-          <div className="rounded-lg border border-white/10 bg-black/25 p-5">
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">Health Score</p>
-              <HealthScoreTooltip />
-            </div>
-            <div className="mt-3 flex items-end gap-3">
-              <span className="text-5xl font-semibold text-white">{report.healthScore}</span>
-              <span className="pb-2 text-xl text-zinc-400">/100</span>
-            </div>
-            <div className={cn("mt-4 inline-flex rounded-md border px-3 py-1 text-sm font-semibold", score.className)}>
-              {score.label} status
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mx-auto max-w-[900px] px-6 sm:px-12">
+      <div className="border-b-[0.5px] border-[#1a1a1a] py-3">
+        <Link href="/#spend-form" className="inline-flex items-center gap-[6px] text-[12px] text-[#666] transition-colors hover:text-[#aaa]">
+          ← Edit inputs
+        </Link>
+      </div>
 
-      <Card className="border-white/10 bg-white/[0.04]">
-        <CardContent className="p-5 sm:p-6">
-          {summaryLoading ? (
-            <div className="space-y-3" aria-label="Loading AI summary">
-              <div className="h-4 w-11/12 animate-pulse rounded bg-white/10" />
-              <div className="h-4 w-10/12 animate-pulse rounded bg-white/10" />
-              <div className="h-4 w-7/12 animate-pulse rounded bg-white/10" />
-            </div>
-          ) : (
-            <p className="text-base italic leading-8 text-zinc-300">{summary}</p>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-2xl font-semibold text-white">Per-tool breakdown</h2>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button type="button" variant="secondary" onClick={copyShareUrl} className="border border-white/10">
-            <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
-            {shareLabel}
-          </Button>
-          <Button type="button" onClick={scrollToLeadCapture} className="bg-[#00ff88] text-black hover:bg-[#00e67a]">
-            <FileText className="mr-2 h-4 w-4" aria-hidden="true" />
-            Get Report
-          </Button>
+      <section className="w-full rounded-none border-b-[0.5px] border-[#1a3326] bg-gradient-to-b from-[#0d1f18] to-[#0a0a0a] px-6 pb-7 pt-8 text-center">
+        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#00e87a]/75">Monthly savings opportunity</p>
+        <h1 className="mt-3 text-[34px] font-medium text-[#00e87a] lg:text-[48px]">
+          <CountUp value={report.totalMonthlySavings} />
+        </h1>
+        <p className="mt-2 text-[14px] text-[#777]">
+          That&apos;s <span className="font-medium text-[#ccc]">{formatDollars(report.totalAnnualSavings)}/year</span> left on the table
+        </p>
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <span className="text-[12px] text-[#777]">Spend health:</span>
+          <span className="h-1 w-20 rounded-sm bg-[#1a1a1a]">
+            <motion.span
+              className="block h-full rounded-sm"
+              style={{ backgroundColor: score.color }}
+              initial={reduced ? false : { width: 0 }}
+              animate={{ width: `${report.healthScore}%` }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            />
+          </span>
+          <span className="text-[13px] font-semibold" style={{ color: score.color }}>
+            {report.healthScore} / 100
+          </span>
         </div>
-      </div>
+      </section>
 
-      <Card className="border-white/10 bg-white/[0.04]">
-        <CardContent className="grid gap-3 p-5 sm:grid-cols-[auto_1fr] sm:items-center">
-          <div className="flex h-11 w-11 items-center justify-center rounded-md bg-[#00ff88]/15 text-[#00ff88]">
-            <TrendingDown className="h-5 w-5" aria-hidden="true" />
+      <section className="border-y-[0.5px] border-[#1a1a1a] px-6 py-[18px]">
+        <div className="mb-3 flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.1em] text-[#555]">
+          <span className="h-[5px] w-[5px] rounded-full bg-[#8b5cf6]" aria-hidden="true" />
+          AI-generated summary
+        </div>
+        {summaryLoading ? (
+          <div className="space-y-2" aria-label="Loading AI summary">
+            <div className="audit-pulse h-3 w-full rounded bg-[#1a1a1a]" />
+            <div className="audit-pulse h-3 w-full rounded bg-[#1a1a1a]" />
+            <div className="audit-pulse h-3 w-[70%] rounded bg-[#1a1a1a]" />
           </div>
+        ) : (
+          <p className="max-w-[600px] text-[13px] italic leading-[1.75] text-[#888]">{summary}</p>
+        )}
+      </section>
+
+      <section className="px-6 pb-5 pt-6">
+        <p className="mb-4 pt-2 text-[10px] font-medium uppercase tracking-[0.1em] text-[#555]">Per-tool breakdown</p>
+        <div className="space-y-2">
+          {report.toolResults.map((tool, index) => {
+            const style = cardTone(tool.status);
+            const annual = tool.estimatedSavings * 12;
+            const validZeroSpendPlan = ["Free", "Hobby", "Pro"].includes(tool.planName ?? "");
+            const showPlanMissing = tool.currentSpend === 0 && !validZeroSpendPlan;
+            return (
+              <motion.article
+                key={tool.toolId}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.08, duration: 0.4 }}
+                className={cn("w-full rounded-lg border-[0.5px] border-l-[3px] px-[14px] py-3", style.wrap)}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="text-[14px] font-medium text-[#eee]">{tool.toolName}</h2>
+                  {showPlanMissing ? (
+                    <p className="text-[12px] text-[#f59e0b]">Plan not selected</p>
+                  ) : (
+                    <p className="text-[13px] text-[#777]">{formatDollars(tool.currentSpend)}/mo</p>
+                  )}
+                </div>
+                <p className={cn("mt-2 text-[12px] font-medium", style.color)}>
+                  {style.prefix} {style.action} {tool.status === "optimal" ? "- keep" : `- ${tool.recommendation}`}
+                </p>
+                {tool.estimatedSavings > 0 ? (
+                  <p className={cn("mt-2 text-[12px] font-semibold", style.save)}>
+                    Save {formatDollars(tool.estimatedSavings)}/mo &middot; {formatDollars(annual)}/yr
+                  </p>
+                ) : null}
+                <p className="mt-1 text-[11px] leading-[1.55] text-[#666]">{tool.reason}</p>
+              </motion.article>
+            );
+          })}
+        </div>
+      </section>
+
+      {report.totalMonthlySavings > 200 ? (
+        <section className="mx-6 mb-5 flex flex-col gap-4 rounded-lg border-[0.5px] border-[#1a4030] bg-[#0d1f18] px-4 py-[14px] sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-white">Compare to your industry</h2>
-            <p className="mt-1 text-sm leading-6 text-zinc-400">
-              Engineering teams your size spend avg $45/dev/month on AI.
-            </p>
+            <p className="text-[9px] uppercase tracking-[0.1em] text-[#00e87a]/80">Credex partner savings{report.totalMonthlySavings > 500 ? " · High-value account" : ""}</p>
+            <h2 className="mt-1 text-[15px] font-medium text-white">Get an additional 15-30% off</h2>
+            <p className="mt-1 text-[12px] text-[#888]">Discounted credits for tools you already use</p>
           </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4">
-        {report.toolResults.map((tool, index) => {
-          const style = resultStyle(tool.status);
-
-          return (
-            <motion.div
-              key={tool.toolId}
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.35, ease: "easeOut" }}
-            >
-              <Card className={cn("border bg-white/[0.035]", style.border)}>
-                <CardContent className="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-start">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      {style.icon}
-                      <h3 className="text-lg font-semibold text-white">
-                        {tool.toolName} {tool.planName}
-                      </h3>
-                      <span className={cn("rounded-md px-2.5 py-1 text-xs font-semibold", style.badge)}>
-                        {tool.estimatedSavings > 0 ? `Save ${dollars(tool.estimatedSavings)}/mo` : "Good fit"}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-base font-medium text-zinc-100">-&gt; {tool.recommendation}</p>
-                    <p className="mt-2 text-sm leading-6 text-zinc-400">Reason: {tool.reason}</p>
-                  </div>
-                  <div className="rounded-md border border-white/10 bg-black/20 px-4 py-3 text-right">
-                    <p className="text-sm text-muted-foreground">Current</p>
-                    <p className="text-2xl font-semibold text-white">{dollars(tool.currentSpend)}/mo</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {report.creditsOpportunity?.prominent ? (
-        <Card className="border-[#00ff88]/45 bg-[#00ff88]/10">
-          <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold text-white">Capture even more savings</h2>
-              <p className="mt-2 text-sm leading-6 text-zinc-300">{report.creditsOpportunity.message}</p>
-            </div>
-            <Button className="bg-[#00ff88] text-black hover:bg-[#00e67a]">Book a consultation</Button>
-          </CardContent>
-        </Card>
+          <a
+            href="#lead-capture"
+            className={cn(
+              "rounded-md bg-[#00e87a] text-center font-semibold text-black",
+              report.totalMonthlySavings > 500 ? "px-5 py-[10px] text-[13px]" : "px-[14px] py-2 text-[11px]"
+            )}
+          >
+            Book a call &rarr;
+          </a>
+        </section>
+      ) : report.totalMonthlySavings < 100 ? (
+        <section className="mx-6 mb-5 rounded-lg border-[0.5px] border-[#1a2a20] bg-[#0a0f0d] px-4 py-[14px]">
+          <h2 className="text-[13px] font-medium text-[#aaa]">You&apos;re spending well. Your AI stack looks optimized.</h2>
+          <p className="mt-1 text-[11px] text-[#666]">Sign up below - we&apos;ll alert you when better options appear.</p>
+        </section>
       ) : null}
 
-      <Card id="lead-capture" className="scroll-mt-24 border-white/10 bg-white/[0.04]">
-        <CardContent className="p-5 sm:p-6">
-          <LeadCapture input={input} report={report} summary={summary || report.summary} />
-        </CardContent>
-      </Card>
-    </section>
+      <section id="lead-capture" className="border-t-[0.5px] border-[#1a1a1a] px-6 py-5">
+        <LeadCapture input={input} report={report} summary={summary || report.summary} />
+      </section>
+    </motion.section>
   );
 }

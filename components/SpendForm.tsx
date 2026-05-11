@@ -2,10 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, BadgeDollarSign } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Keyboard, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
@@ -15,42 +12,27 @@ import type { ToolId } from "@/types";
 
 type FieldErrors = Partial<Record<string, string>>;
 
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 2
-});
+const ICONS: Record<ToolId, string> = {
+  cursor: "",
+  "github-copilot": "gh",
+  claude: "*",
+  chatgpt: "o",
+  "anthropic-api": "api",
+  "openai-api": "api",
+  gemini: "<>",
+  windsurf: "~"
+};
+
+const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 function numberFromInput(value: string): number {
-  if (value.trim() === "") {
-    return 0;
-  }
-
-  return Number(value);
-}
-
-function planLabel(toolId: ToolId, planId: string): string {
-  const plan = getPlan(toolId, planId);
-
-  if (plan.monthlyPrice === null) {
-    return plan.description ? `${plan.name} - ${plan.description}` : plan.name;
-  }
-
-  if (plan.billingModel === "included") {
-    return `${plan.name} - included`;
-  }
-
-  if (plan.monthlyPrice === 0) {
-    return `${plan.name} - free`;
-  }
-
-  return `${plan.name} - ${currencyFormatter.format(plan.monthlyPrice)}/user/mo`;
+  return value.trim() === "" ? 0 : Number(value);
 }
 
 export function SpendForm() {
   const router = useRouter();
   const [errors, setErrors] = useState<FieldErrors>({});
-
+  const [submitting, setSubmitting] = useState(false);
   const {
     tools,
     totalTeamSize,
@@ -60,7 +42,6 @@ export function SpendForm() {
     setToolPlan,
     setToolSeats,
     setToolMonthlySpend,
-    setToolAvgTokensMonthly,
     setTotalTeamSize,
     setPrimaryUseCase,
     setCompanyStage
@@ -69,192 +50,163 @@ export function SpendForm() {
   const enabledTools = useMemo(() => Object.values(tools).filter((tool) => tool.enabled), [tools]);
   const totalMonthlySpend = enabledTools.reduce((sum, tool) => sum + tool.monthlySpend, 0);
 
-  function validate(): boolean {
-    const nextErrors: FieldErrors = {};
-
-    if (enabledTools.length === 0) {
-      nextErrors.tools = "Enable at least one AI tool to calculate savings.";
-    }
-
-    Object.values(tools).forEach((tool) => {
-      if (!tool.enabled) {
-        return;
-      }
-
-      if (tool.seats < 1) {
-        nextErrors[`${tool.toolId}.seats`] = "Seats must be at least 1.";
-      }
-
-      if (tool.monthlySpend < 0 || Number.isNaN(tool.monthlySpend)) {
-        nextErrors[`${tool.toolId}.monthlySpend`] = "Monthly spend must be 0 or higher.";
-      }
-    });
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  }
-
   function submitForm(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (validate()) {
-      router.push("/audit");
+    if (enabledTools.length === 0) {
+      setErrors({ tools: "Enable at least one AI tool to calculate savings." });
+      return;
     }
+    setSubmitting(true);
+    router.push("/audit");
   }
 
   return (
-    <form id="spend-form" onSubmit={submitForm} className="mx-auto w-full max-w-6xl scroll-mt-8 space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">60-second audit</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-normal text-foreground sm:text-3xl">Add your AI stack</h2>
-        </div>
-        <div className="rounded-md border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary">
-          Current total: <span className="font-semibold">{currencyFormatter.format(totalMonthlySpend)}/mo</span>
-        </div>
+    <form id="spend-form" onSubmit={submitForm} className="content-wrapper scroll-mt-24">
+      <div className="mb-4 flex items-baseline justify-between gap-3 border-b-[0.5px] border-[#1a1a1a] pb-3">
+        <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#555]">60-second audit</p>
+        <p className="text-[13px] text-[#666]">
+          Current total: <span className="text-[15px] font-semibold text-[#00e87a]">{money.format(totalMonthlySpend)}</span><span className="text-[13px] text-[#555]">/mo</span>
+        </p>
       </div>
 
-      {errors.tools ? <p className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">{errors.tools}</p> : null}
+      {errors.tools ? <p className="mb-3 rounded-md border-[0.5px] border-[#3d1515] bg-[#110a0a] px-3 py-2 text-[12px] text-[#ef4444]">{errors.tools}</p> : null}
 
-      <div className="grid gap-4">
+      <div className="mb-2 hidden items-center gap-3 border-b-[0.5px] border-[#1a1a1a] px-4 pb-2 min-[720px]:flex">
+        <span className="w-9 shrink-0" />
+        <span className="w-7 shrink-0" />
+        <span className="w-[140px] shrink-0 text-[9px] uppercase tracking-[0.1em] text-[#444]">Tool</span>
+        <span className="min-w-0 flex-1 text-[9px] uppercase tracking-[0.1em] text-[#444]">Plan</span>
+        <span className="w-[52px] shrink-0 text-center text-[9px] uppercase tracking-[0.1em] text-[#444]">Seats</span>
+        <span className="w-[60px] shrink-0 text-right text-[9px] uppercase tracking-[0.1em] text-[#444]">$/mo</span>
+      </div>
+
+      <div className="space-y-2">
         {TOOLS.map((tool) => {
-          const toolState = tools[tool.id];
-          const selectedPlan = getPlan(tool.id, toolState.planId);
-          const isManualSpend =
-            selectedPlan.monthlyPrice === null ||
-            selectedPlan.billingModel === "api" ||
-            selectedPlan.billingModel === "custom";
-          const showTokens = selectedPlan.billingModel === "api" || tool.category === "api";
+          const state = tools[tool.id];
+          const selectedPlan = getPlan(tool.id, state.planId);
+          const isApiOnly = tool.category === "api" || selectedPlan.billingModel === "api";
+          const spendInputId = `${tool.id}-monthly-spend`;
+          const seatsInputId = `${tool.id}-seats`;
 
           return (
-            <Card
+            <div
               key={tool.id}
               className={cn(
-                "overflow-hidden border-white/10 bg-white/[0.035] transition-colors",
-                toolState.enabled ? "shadow-[0_0_0_1px_rgba(0,255,136,0.12)]" : "opacity-55"
+                "min-h-[52px] overflow-x-auto rounded-lg px-4 py-3 transition",
+                state.enabled
+                  ? "border border-[#1a4030] bg-[#0a1f15] shadow-[inset_0_0_0_1px_#0d2a1e]"
+                  : "border-[0.5px] border-[#1e1e1e] bg-[#111]"
               )}
             >
-              <CardContent className="p-4 sm:p-5">
-                <div className="grid gap-4 lg:grid-cols-[minmax(160px,1.1fr)_minmax(180px,1.3fr)_110px_minmax(140px,0.9fr)] lg:items-start">
-                  <div className="flex items-center justify-between gap-4 lg:justify-start">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <BadgeDollarSign className="h-4 w-4 text-primary" aria-hidden="true" />
-                        <h3 className="text-base font-semibold text-foreground">{tool.name}</h3>
+              <div className="flex w-full min-w-[640px] flex-row items-center gap-3">
+                <Switch
+                  checked={state.enabled}
+                  onCheckedChange={(checked) => {
+                    setToolEnabled(tool.id, checked);
+                    setErrors({});
+                  }}
+                  role="switch"
+                  aria-checked={state.enabled}
+                  aria-label={`Enable ${tool.name}`}
+                  className="h-5 w-9 border-0 bg-[#222] data-[state=checked]:bg-[#00e87a] [&>span]:h-4 [&>span]:w-4 [&>span]:bg-[#555] [&>span]:data-[state=checked]:translate-x-4 [&>span]:data-[state=checked]:bg-white"
+                />
+                <div className={cn("flex min-w-0 flex-1 flex-row items-center gap-3", !state.enabled && "[&_*]:pointer-events-none")}>
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#1a1a1a] text-center text-[14px] text-[#777]" aria-hidden="true">
+                    {tool.id === "cursor" ? <Keyboard className="h-4 w-4" /> : ICONS[tool.id]}
+                  </span>
+                  <span className={cn("w-[140px] shrink-0 text-[14px] font-medium", state.enabled ? "text-white" : "text-[#888]")}>{tool.name}</span>
+
+                  {isApiOnly ? (
+                    <>
+                      <span className="min-w-0 flex-1" />
+                      <label htmlFor={spendInputId} className="shrink-0 text-[11px] text-[#666]">
+                        Monthly spend ($)
+                      </label>
+                      <input
+                        id={spendInputId}
+                        type="number"
+                        min={0}
+                        value={state.monthlySpend}
+                        onChange={(event) => setToolMonthlySpend(tool.id, numberFromInput(event.target.value))}
+                        disabled={!state.enabled}
+                        className={cn(
+                          "h-[34px] w-20 shrink-0 rounded-md border px-2 text-right text-[13px]",
+                          state.enabled
+                            ? "border-[#00e87a] bg-[#0f2a1e] font-medium text-[#00e87a]"
+                            : "border-[#2a2a2a] bg-[#1a1a1a] text-[#555]"
+                        )}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div className="min-w-0 flex-1">
+                        <Select value={state.planId || tool.plans[0].id} onValueChange={(planId) => setToolPlan(tool.id, planId)} disabled={!state.enabled}>
+                          <SelectTrigger
+                            aria-label={`${tool.name} plan`}
+                            className={cn(
+                              "h-[34px] w-full rounded-md px-[10px] py-0 text-[12px]",
+                              state.enabled
+                                ? "border border-[#00e87a] bg-[#0f2a1e] font-medium text-[#00e87a]"
+                                : "border-[0.5px] border-[#2a2a2a] bg-[#1a1a1a] text-[#555]"
+                            )}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tool.plans.map((plan) => (
+                              <SelectItem key={plan.id} value={plan.id}>
+                                {plan.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <p className="mt-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">{tool.category}</p>
-                    </div>
-                    <Switch
-                      checked={toolState.enabled}
-                      onCheckedChange={(checked) => {
-                        setToolEnabled(tool.id, checked);
-                        setErrors((current) => ({ ...current, tools: undefined }));
-                      }}
-                      aria-label={`Enable ${tool.name}`}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground" htmlFor={`${tool.id}-plan`}>
-                      Plan
-                    </label>
-                    <Select
-                      value={toolState.planId}
-                      onValueChange={(planId) => setToolPlan(tool.id, planId)}
-                      disabled={!toolState.enabled}
-                    >
-                      <SelectTrigger id={`${tool.id}-plan`}>
-                        <SelectValue placeholder="Select plan" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tool.plans.map((plan) => (
-                          <SelectItem key={plan.id} value={plan.id}>
-                            {planLabel(tool.id, plan.id)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {selectedPlan.description ? <p className="text-xs text-muted-foreground">{selectedPlan.description}</p> : null}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground" htmlFor={`${tool.id}-seats`}>
-                      Seats
-                    </label>
-                    <Input
-                      id={`${tool.id}-seats`}
-                      type="number"
-                      min={1}
-                      inputMode="numeric"
-                      value={toolState.seats}
-                      onChange={(event) => setToolSeats(tool.id, numberFromInput(event.target.value))}
-                      disabled={!toolState.enabled}
-                    />
-                    {errors[`${tool.id}.seats`] ? <p className="text-xs text-destructive">{errors[`${tool.id}.seats`]}</p> : null}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground" htmlFor={`${tool.id}-spend`}>
-                      Monthly spend
-                    </label>
-                    <Input
-                      id={`${tool.id}-spend`}
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      inputMode="decimal"
-                      value={toolState.monthlySpend}
-                      onChange={(event) => setToolMonthlySpend(tool.id, numberFromInput(event.target.value))}
-                      disabled={!toolState.enabled || !isManualSpend}
-                    />
-                    {errors[`${tool.id}.monthlySpend`] ? <p className="text-xs text-destructive">{errors[`${tool.id}.monthlySpend`]}</p> : null}
-                  </div>
+                      <label className="sr-only" htmlFor={seatsInputId}>
+                        {tool.name} seats
+                      </label>
+                      <div className="flex w-[52px] shrink-0 items-center gap-1">
+                        <span className="text-[10px] text-[#444]">x</span>
+                        <input
+                          id={seatsInputId}
+                          type="number"
+                          min={1}
+                          title={`${state.seats} seat${state.seats === 1 ? "" : "s"}`}
+                          value={state.seats}
+                          onChange={(event) => setToolSeats(tool.id, numberFromInput(event.target.value))}
+                          disabled={!state.enabled}
+                          className={cn(
+                            "h-[34px] w-[42px] rounded-md px-1 text-center text-[12px]",
+                            state.enabled
+                              ? "border border-[#00e87a] bg-[#0f2a1e] font-medium text-[#00e87a]"
+                              : "border-[0.5px] border-[#2a2a2a] bg-[#1a1a1a] text-[#444]"
+                          )}
+                        />
+                      </div>
+                      <div className="flex w-[60px] shrink-0 items-center justify-end gap-[2px]">
+                        <span className={cn("text-[11px]", state.enabled ? "text-[#00e87a]/75" : "text-[#444]")}>$</span>
+                        <span className={cn("text-[13px] font-medium", state.enabled ? "text-[#00e87a]" : "text-[#444]")}>
+                          {Math.round(state.monthlySpend)}
+                        </span>
+                        <span className="text-[10px] text-[#444]">/mo</span>
+                      </div>
+                    </>
+                  )}
                 </div>
-
-                {showTokens ? (
-                  <div className="mt-4 grid gap-2 border-t border-white/10 pt-4 sm:max-w-sm">
-                    <label className="text-xs font-medium text-muted-foreground" htmlFor={`${tool.id}-tokens`}>
-                      Avg tokens/month
-                    </label>
-                    <Input
-                      id={`${tool.id}-tokens`}
-                      type="number"
-                      min={0}
-                      inputMode="numeric"
-                      value={toolState.avgTokensMonthly ?? 0}
-                      onChange={(event) => setToolAvgTokensMonthly(tool.id, numberFromInput(event.target.value))}
-                      disabled={!toolState.enabled}
-                    />
-                  </div>
-                ) : null}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           );
         })}
       </div>
 
-      <Card className="border-white/10 bg-white/[0.045]">
-        <CardHeader>
-          <CardTitle>Company context</CardTitle>
-          <CardDescription>Used to benchmark overlap, seat waste, and plan fit.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground" htmlFor="team-size">
-              Total team size
-            </label>
-            <Input
-              id="team-size"
-              type="number"
-              min={1}
-              value={totalTeamSize}
-              onChange={(event) => setTotalTeamSize(numberFromInput(event.target.value))}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">Primary use case</label>
+      <div className="mt-8 border-t-[0.5px] border-[#1a1a1a] pt-3">
+        <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.12em] text-[#555]">Your team</p>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <Field label="Team size" htmlFor="team-size">
+            <input id="team-size" type="number" min={1} value={totalTeamSize} onChange={(event) => setTotalTeamSize(numberFromInput(event.target.value))} className="w-full bg-transparent text-[14px] text-[#aaa]" />
+          </Field>
+          <Field label="Primary use">
             <Select value={primaryUseCase} onValueChange={setPrimaryUseCase}>
-              <SelectTrigger>
+              <SelectTrigger aria-label="Primary use" className="h-auto border-0 bg-transparent p-0 text-[14px] text-[#aaa]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -265,11 +217,10 @@ export function SpendForm() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">Company stage</label>
+          </Field>
+          <Field label="Company stage">
             <Select value={companyStage} onValueChange={setCompanyStage}>
-              <SelectTrigger>
+              <SelectTrigger aria-label="Company stage" className="h-auto border-0 bg-transparent p-0 text-[14px] text-[#aaa]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -280,17 +231,23 @@ export function SpendForm() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex flex-col gap-3 rounded-lg border border-primary/25 bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-primary">No signup required. We show you savings first.</p>
-        <Button type="submit" size="lg" className="w-full bg-[#00ff88] text-black hover:bg-[#00e67a] sm:w-auto">
-          Calculate My Savings
-          <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-        </Button>
+          </Field>
+        </div>
       </div>
+
+      <button type="submit" disabled={enabledTools.length === 0 || submitting} className="mt-6 flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#00e87a] p-4 text-[15px] font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40">
+        {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
+        {submitting ? "Analyzing..." : "Calculate My Savings"}
+      </button>
     </form>
+  );
+}
+
+function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) {
+  return (
+    <label htmlFor={htmlFor} className="flex h-16 flex-col justify-center rounded-md border-[0.5px] border-[#1e1e1e] bg-[#111] px-4 py-3">
+      <span className="mb-1 block text-[10px] uppercase tracking-[0.08em] text-[#555]">{label}</span>
+      {children}
+    </label>
   );
 }

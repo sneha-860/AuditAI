@@ -18,14 +18,6 @@ function dollars(value: number): string {
   }).format(value);
 }
 
-function compactAnnual(value: number): string {
-  if (value >= 1000) {
-    return `$${Math.round(value / 1000).toLocaleString("en-US")}k/year`;
-  }
-
-  return `${dollars(value)}/year`;
-}
-
 function countOptimizations(report: AuditReport): number {
   return report.recommendations.filter((recommendation) => recommendation.monthlySavings > 0).length;
 }
@@ -44,15 +36,15 @@ export async function GET(request: NextRequest) {
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
-            background: "#0f0f0f",
+            background: "#0a0a0a",
             color: "#f5f5f5",
             fontFamily: "Inter, Arial, sans-serif",
             padding: 72
           }}
         >
-          <div style={{ color: "#00ff88", fontSize: 34, fontWeight: 700 }}>AI Spend Audit</div>
-          <div style={{ marginTop: 32, fontSize: 68, fontWeight: 800 }}>Run your own audit</div>
-          <div style={{ marginTop: 20, color: "#a1a1aa", fontSize: 30 }}>credex.rocks</div>
+          <div style={{ color: "#ffffff", fontSize: 18, fontWeight: 500 }}>AuditAI</div>
+          <div style={{ marginTop: 32, fontSize: 68, fontWeight: 500 }}>Run your own audit</div>
+          <div style={{ marginTop: 20, color: "#444444", fontSize: 30 }}>credex.rocks</div>
         </div>
       ),
       size
@@ -70,42 +62,47 @@ export async function GET(request: NextRequest) {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          background: "#0f0f0f",
+          background: "#0a0a0a",
           color: "#f5f5f5",
           fontFamily: "Inter, Arial, sans-serif",
           padding: 64
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 28 }}>
-          <div style={{ color: "#00ff88", fontWeight: 800 }}>AI Spend Audit</div>
-          <div style={{ color: "#a1a1aa", fontWeight: 600 }}>credex.rocks</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ color: "#ffffff", fontSize: 18, fontWeight: 500 }}>AuditAI</div>
+          <div style={{ color: "#444444", fontSize: 14, fontWeight: 400 }}>credex.rocks</div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-          <div style={{ color: "#a1a1aa", fontSize: 30, fontWeight: 700 }}>Potential savings</div>
-          <div style={{ marginTop: 18, color: "#00ff88", fontSize: 126, fontWeight: 900, letterSpacing: 0 }}>
-            Save {dollars(report.totalMonthlySavings)}/mo
+          <div style={{ color: "#00e87a", opacity: 0.75, fontSize: 14, fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase" }}>Potential savings</div>
+          <div style={{ marginTop: 18, display: "flex", alignItems: "baseline" }}>
+            <span style={{ color: "#00e87a", fontSize: 80, fontWeight: 500, letterSpacing: 0 }}>{dollars(report.totalMonthlySavings)}</span>
+            <span style={{ color: "#555555", fontSize: 32, fontWeight: 400, marginLeft: 12 }}>/month</span>
           </div>
-          <div style={{ marginTop: 8, color: "#f5f5f5", fontSize: 42, fontWeight: 700 }}>
-            ({compactAnnual(report.totalAnnualSavings)})
+          <div style={{ marginTop: 8, color: "#444444", fontSize: 24, fontWeight: 400 }}>
+            ({dollars(report.totalAnnualSavings)}/year)
           </div>
           <div
             style={{
               marginTop: 30,
-              border: "2px solid rgba(0,255,136,0.45)",
-              background: "rgba(0,255,136,0.12)",
-              borderRadius: 12,
-              color: "#00ff88",
-              padding: "12px 22px",
-              fontSize: 30,
-              fontWeight: 800
+              border: "0.5px solid #1e1e1e",
+              background: "#111111",
+              borderRadius: 999,
+              color: "#aaaaaa",
+              padding: "10px 18px",
+              fontSize: 18,
+              fontWeight: 400,
+              display: "flex",
+              alignItems: "center",
+              gap: 10
             }}
           >
-            Health score {report.healthScore}/100
+            <span style={{ width: 8, height: 8, borderRadius: 999, background: report.healthScore > 70 ? "#22c55e" : report.healthScore > 40 ? "#f59e0b" : "#ef4444" }} />
+            Spend health: {report.healthScore}/100
           </div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "center", color: "#d4d4d8", fontSize: 32, fontWeight: 700 }}>
+        <div style={{ display: "flex", justifyContent: "center", color: "#444444", fontSize: 16, fontWeight: 400 }}>
           {report.toolResults.length} tools audited · {optimizations} optimizations found
         </div>
       </div>

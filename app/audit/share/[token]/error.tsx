@@ -1,21 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Link2Off } from "lucide-react";
 
 export default function ShareAuditError() {
   return (
-    <main id="main-content" className="flex min-h-screen items-center justify-center bg-[#0f0f0f] px-4 text-foreground">
-      <Card className="max-w-lg border-white/10 bg-white/[0.04]">
-        <CardContent className="p-8 text-center">
-          <h1 className="text-3xl font-semibold text-white">This audit link has expired or does not exist.</h1>
-          <p className="mt-3 text-sm leading-6 text-zinc-400">Run your own free audit and get a fresh shareable report.</p>
-          <Button asChild className="mt-6 bg-[#00ff88] text-black hover:bg-[#00e67a]">
-            <Link href="/">Run your own free audit -&gt;</Link>
-          </Button>
-        </CardContent>
-      </Card>
+    <main id="main-content" className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-6 py-20 text-white">
+      <section className="max-w-md text-center">
+        <Link2Off className="mx-auto mb-5 h-12 w-12 text-[#444]" aria-hidden="true" />
+        <h1 className="text-[18px] font-medium text-white">Audit not found</h1>
+        <p className="mt-3 text-[14px] text-[#888]">This link may have expired or doesn&apos;t exist.</p>
+        <Link href="/" className="mt-6 inline-flex rounded-lg bg-[#00e87a] px-5 py-3 text-[13px] font-semibold text-black">
+          Run your own free audit &rarr;
+        </Link>
+      </section>
     </main>
   );
 }

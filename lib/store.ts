@@ -20,18 +20,43 @@ interface AuditStore extends AuditInput {
   getAuditInput: () => AuditInput;
 }
 
+const DEFAULT_PLAN_IDS: Record<ToolId, string> = {
+  cursor: "pro",
+  "github-copilot": "individual",
+  claude: "pro",
+  chatgpt: "plus",
+  "anthropic-api": "monthly-spend",
+  "openai-api": "monthly-spend",
+  gemini: "pro",
+  windsurf: "free"
+};
+
+function defaultPlanFor(toolId: ToolId): string {
+  return DEFAULT_PLAN_IDS[toolId];
+}
+
+function normalizeTool(tool: Partial<ToolInput> | undefined, toolId: ToolId): ToolInput {
+  const toolDefinition = TOOLS.find((candidate) => candidate.id === toolId);
+  const persistedPlanId = tool?.planId;
+  const hasValidPersistedPlan = toolDefinition?.plans.some((plan) => plan.id === persistedPlanId);
+  const planId = tool?.enabled && hasValidPersistedPlan ? persistedPlanId! : defaultPlanFor(toolId);
+  const seats = positiveInteger(tool?.seats ?? 1);
+  const calculatedSpend = calculateMonthlySpend(toolId, planId, seats);
+  const monthlySpend = tool?.monthlySpend === undefined || tool.monthlySpend === 0 ? calculatedSpend : nonNegativeNumber(tool.monthlySpend);
+
+  return {
+    toolId,
+    enabled: Boolean(tool?.enabled),
+    planId,
+    seats,
+    monthlySpend,
+    avgTokensMonthly: nonNegativeNumber(tool?.avgTokensMonthly ?? 0)
+  };
+}
+
 function createInitialTools(): Record<ToolId, ToolInput> {
   return TOOLS.reduce<Record<ToolId, ToolInput>>((acc, tool) => {
-    const planId = tool.plans[0].id;
-
-    acc[tool.id] = {
-      toolId: tool.id,
-      enabled: false,
-      planId,
-      seats: 1,
-      monthlySpend: calculateMonthlySpend(tool.id, planId, 1),
-      avgTokensMonthly: 0
-    };
+    acc[tool.id] = normalizeTool(undefined, tool.id);
 
     return acc;
   }, {} as Record<ToolId, ToolInput>);
@@ -145,7 +170,20 @@ export const useAuditStore = create<AuditStore>()(
     }),
     {
       name: "credex-ai-spend-audit",
-      storage: createJSONStorage(() => localStorage)
+      storage: createJSONStorage(() => localStorage),
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<AuditStore> | undefined;
+        const persistedTools = (persisted?.tools ?? {}) as Partial<Record<ToolId, Partial<ToolInput>>>;
+
+        return {
+          ...currentState,
+          ...persisted,
+          tools: TOOLS.reduce<Record<ToolId, ToolInput>>((acc, tool) => {
+            acc[tool.id] = normalizeTool(persistedTools[tool.id], tool.id);
+            return acc;
+          }, {} as Record<ToolId, ToolInput>)
+        };
+      }
     }
   )
 );

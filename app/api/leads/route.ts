@@ -65,7 +65,7 @@ export async function POST(request: Request) {
   const shareToken = nanoid(10);
   const shareUrl = `/audit/share/${shareToken}`;
   const ipHash = hashIp(getClientIp(request));
-  const isHighValue = report.totalMonthlySavings > 500;
+  const isHighValue = report.isHighValue || report.totalMonthlySpend > 500;
   const summary = await generateAuditSummary({ input: body.input, report });
   const reportWithSummary: AuditReport = {
     ...report,
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
   };
 
   if (!supabaseUrl || !serviceRoleKey) {
-    await sendAuditEmail({
+    const emailDelivered = await sendAuditEmail({
       email,
       companyName: body.companyName,
       report: reportWithSummary,
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
       isHighValue
     });
 
-    return NextResponse.json({ ok: true, configured: false, shareUrl: null }, { status: 202 });
+    return NextResponse.json({ ok: true, configured: false, emailDelivered, shareUrl: null }, { status: 202 });
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
@@ -118,7 +118,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  await sendAuditEmail({
+  const emailDelivered = await sendAuditEmail({
     email,
     companyName: body.companyName,
     report: reportWithSummary,
@@ -127,7 +127,7 @@ export async function POST(request: Request) {
     isHighValue
   });
 
-  return NextResponse.json({ ok: true, shareUrl });
+  return NextResponse.json({ ok: true, emailDelivered, shareUrl });
 }
 
 function getClientIp(request: Request): string {
@@ -159,21 +159,28 @@ async function sendAuditEmail({
   summary: string;
   shareUrl: string | null;
   isHighValue: boolean;
-}) {
+}): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    return;
+    return false;
   }
 
-  const resend = new Resend(apiKey);
-  const company = companyName?.trim() || "your team";
+  try {
+    const resend = new Resend(apiKey);
+    const company = companyName?.trim() || "your team";
 
-  await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL ?? "Credex <onboarding@resend.dev>",
-    to: email,
-    subject: `Your AI Spend Audit - ${company} saves ${formatDollars(report.totalMonthlySavings)}/month`,
-    html: buildEmailHtml({ company, report, summary, shareUrl, isHighValue })
-  });
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL ?? "Credex <onboarding@resend.dev>",
+      to: email,
+      subject: `Your AI Spend Audit - ${company} saves ${formatDollars(report.totalMonthlySavings)}/month`,
+      html: buildEmailHtml({ company, report, summary, shareUrl, isHighValue })
+    });
+
+    return true;
+  } catch (error) {
+    console.error("Failed to send audit email", error);
+    return false;
+  }
 }
 
 function buildEmailHtml({
@@ -195,20 +202,20 @@ function buildEmailHtml({
 
   return `
     <div style="font-family:Inter,Arial,sans-serif;background:#0f0f0f;color:#f5f5f5;padding:28px;">
-      <div style="max-width:640px;margin:0 auto;background:#171717;border:1px solid #2f2f2f;border-radius:8px;padding:28px;">
-        <div style="font-size:22px;font-weight:700;color:#00ff88;">Credex</div>
+      <div style="max-width:640px;margin:0 auto;background:#111111;border:0.5px solid #1e1e1e;border-radius:8px;padding:28px;">
+        <div style="font-size:22px;font-weight:500;color:#00e87a;">Credex</div>
         <h1 style="font-size:24px;margin:28px 0 8px;">Here's your audit summary</h1>
         <p style="line-height:1.7;color:#d4d4d4;">${escapeHtml(summary)}</p>
-        <div style="margin:28px 0;padding:20px;border-radius:8px;background:#00ff881a;border:1px solid #00ff8866;">
+        <div style="margin:28px 0;padding:20px;border-radius:8px;background:#0d1f18;border:0.5px solid #1a4030;">
           <div style="font-size:14px;color:#9ca3af;">Total potential savings</div>
-          <div style="font-size:36px;font-weight:800;color:#00ff88;">${formatDollars(report.totalMonthlySavings)}/month</div>
+          <div style="font-size:36px;font-weight:500;color:#00e87a;">${formatDollars(report.totalMonthlySavings)}/month</div>
           <div style="font-size:16px;color:#d4d4d4;">${formatDollars(report.totalAnnualSavings)}/year</div>
         </div>
         <table style="width:100%;border-collapse:collapse;margin-top:20px;">
           <thead>
             <tr>
-              <th align="left" style="padding:10px;border-bottom:1px solid #333;color:#9ca3af;">Recommendation</th>
-              <th align="right" style="padding:10px;border-bottom:1px solid #333;color:#9ca3af;">Savings</th>
+              <th align="left" style="padding:10px;border-bottom:0.5px solid #333;color:#9ca3af;">Recommendation</th>
+              <th align="right" style="padding:10px;border-bottom:0.5px solid #333;color:#9ca3af;">Savings</th>
             </tr>
           </thead>
           <tbody>
@@ -216,8 +223,8 @@ function buildEmailHtml({
               .map(
                 (rec) => `
                   <tr>
-                    <td style="padding:12px 10px;border-bottom:1px solid #292929;color:#f5f5f5;">${escapeHtml(rec.action)}</td>
-                    <td align="right" style="padding:12px 10px;border-bottom:1px solid #292929;color:#00ff88;">${formatDollars(rec.monthlySavings)}/mo</td>
+                    <td style="padding:12px 10px;border-bottom:0.5px solid #292929;color:#f5f5f5;">${escapeHtml(rec.action)}</td>
+                    <td align="right" style="padding:12px 10px;border-bottom:0.5px solid #292929;color:#00e87a;">${formatDollars(rec.monthlySavings)}/mo</td>
                   </tr>`
               )
               .join("")}
@@ -232,7 +239,7 @@ function buildEmailHtml({
         </p>
         ${
           shareUrl
-            ? `<a href="${shareUrl}" style="display:inline-block;margin-top:18px;background:#00ff88;color:#0f0f0f;text-decoration:none;font-weight:700;padding:12px 16px;border-radius:6px;">Open shareable audit</a>`
+            ? `<a href="${shareUrl}" style="display:inline-block;margin-top:18px;background:#00e87a;color:#0f0f0f;text-decoration:none;font-weight:500;padding:12px 16px;border-radius:6px;">Open shareable audit</a>`
             : ""
         }
         <p style="font-size:12px;color:#9ca3af;margin-top:28px;">Sent for ${escapeHtml(company)}.</p>

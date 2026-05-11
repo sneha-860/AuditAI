@@ -1,28 +1,34 @@
-import { Github } from "lucide-react";
+"use client";
+
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { usePathname } from "next/navigation";
 
 export function SiteHeader() {
-  const githubUrl = process.env.NEXT_PUBLIC_GITHUB_URL;
+  const pathname = usePathname();
+  const isSharePage = pathname.startsWith("/audit/share/");
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0f0f0f]/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="text-lg font-semibold text-white" aria-label="Credex home">
-          credex<span className="text-[#00ff88]">.</span>rocks
+    <header className="sticky top-0 z-40 audit-border border-b border-[#1a1a1a] bg-[#0a0a0a]/80 backdrop-blur">
+      <div className="mx-auto flex h-[60px] max-w-[1200px] items-center justify-between px-6 sm:px-12">
+        <Link href="/" className="flex items-center gap-2 text-[16px] font-medium text-white" aria-label="AuditAI home">
+          <span className="h-2 w-2 rounded-full bg-[#00e87a]" aria-hidden="true" />
+          AuditAI
         </Link>
-        <nav className="flex items-center gap-2" aria-label="Primary navigation">
-          {githubUrl ? (
-            <Button asChild variant="ghost" size="sm" className="hidden border border-white/10 sm:inline-flex">
-              <a href={githubUrl} aria-label="Open Credex on GitHub">
-                <Github className="mr-2 h-4 w-4" aria-hidden="true" />
-                GitHub
-              </a>
-            </Button>
-          ) : null}
-          <Button asChild size="sm" className="bg-[#00ff88] text-black hover:bg-[#00e67a]">
-            <Link href="/#spend-form">Run Audit</Link>
-          </Button>
+        <nav className="flex items-center gap-8" aria-label="Primary navigation">
+          {isSharePage ? (
+            <Link href="/#spend-form" className="text-[13px] font-medium text-[#00e87a]/75 transition-colors duration-150 hover:text-[#00e87a]">
+              Run your free audit &rarr;
+            </Link>
+          ) : (
+            <>
+              <Link href="/#how-it-works" className="hidden text-[13px] tracking-[0.01em] text-[#999] transition-colors duration-150 hover:text-white sm:inline">
+                How it works
+              </Link>
+              <Link href="/#spend-form" className="rounded-lg bg-[#00e87a] px-5 py-[9px] text-[13px] font-semibold tracking-[0.01em] text-black transition-all duration-150 ease-in-out hover:-translate-y-px hover:bg-[#00d470]">
+                Run Audit &rarr;
+              </Link>
+            </>
+          )}
         </nav>
       </div>
     </header>
@@ -31,10 +37,20 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-white/10 bg-[#0f0f0f] px-4 py-8 text-sm text-zinc-500 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-6xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <p>Pricing data verified May 4-10, 2026.</p>
-        <p>Built for Credex. Not affiliated with any AI tool vendor.</p>
+    <footer className="audit-border border-t border-[#1a1a1a] bg-[#080808] px-6 py-8 sm:px-12">
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-4 text-[12px] text-[#444] sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-[14px] font-medium text-[#888]">
+            <span className="h-2 w-2 rounded-full bg-[#00e87a]" aria-hidden="true" />
+            AuditAI
+          </div>
+          <p className="mt-1 text-[12px] text-[#444]">AI spend intelligence for startups</p>
+        </div>
+        <div className="flex gap-4 text-[12px] text-[#666]">
+          <Link className="transition-colors duration-150 hover:text-[#999]" href="/#how-it-works">How it works</Link>
+          <Link className="transition-colors duration-150 hover:text-[#999]" href="/PRICING_DATA.md">Pricing data</Link>
+        </div>
+        <p className="max-w-[240px] text-[11px] leading-[1.5] text-[#444]">Pricing data verified May 4-10, 2026. Not affiliated with any AI vendor.</p>
       </div>
     </footer>
   );

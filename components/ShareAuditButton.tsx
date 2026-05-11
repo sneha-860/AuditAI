@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Share2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 export function ShareAuditButton({ title, text }: { title: string; text: string }) {
   const [label, setLabel] = useState("Share");
@@ -26,9 +25,14 @@ export function ShareAuditButton({ title, text }: { title: string; text: string 
   }
 
   return (
-    <Button type="button" variant="secondary" onClick={shareAudit} className="border border-white/10" aria-label="Share this audit">
-      <Share2 className="mr-2 h-4 w-4" aria-hidden="true" />
+    <button
+      type="button"
+      onClick={shareAudit}
+      className="inline-flex items-center justify-center rounded-md border-[0.5px] border-[#2a2a2a] bg-[#111] px-3 py-[7px] text-[11px] text-[#777] transition hover:bg-[#161616]"
+      aria-label="Share this audit"
+    >
+      <Share2 className="mr-2 h-3 w-3" aria-hidden="true" />
       {label}
-    </Button>
+    </button>
   );
 }

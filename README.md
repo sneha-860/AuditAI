@@ -21,7 +21,7 @@ Create `.env.local` with the values below. The app runs without most server inte
 
 ```bash
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
-NEXT_PUBLIC_GITHUB_URL=https://github.com/your-org/credex-ai-spend-audit
+NEXT_PUBLIC_GITHUB_URL=https://github.com/sneha-860/Credex_Assignment
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 ANTHROPIC_API_KEY=your_anthropic_api_key
