@@ -37,20 +37,23 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   return (
-    <footer className="audit-border border-t border-[#1a1a1a] bg-[#080808] px-6 py-8 sm:px-12">
+    <footer className="border-t-[0.5px] border-[#222] bg-[#080808] px-6 py-7 sm:px-12">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-4 text-[12px] text-[#444] sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-[14px] font-medium text-[#888]">
+          <div className="flex items-center gap-2 text-[14px] font-medium text-[#ccc]">
             <span className="h-2 w-2 rounded-full bg-[#00e87a]" aria-hidden="true" />
             AuditAI
           </div>
-          <p className="mt-1 text-[12px] text-[#444]">AI spend intelligence for startups</p>
+          <p className="mt-1 text-[12px] text-[#555]">AI spend intelligence for startups</p>
         </div>
-        <div className="flex gap-4 text-[12px] text-[#666]">
+        <div className="flex gap-6 text-[12px] text-[#666]">
           <Link className="transition-colors duration-150 hover:text-[#999]" href="/#how-it-works">How it works</Link>
           <Link className="transition-colors duration-150 hover:text-[#999]" href="/PRICING_DATA.md">Pricing data</Link>
         </div>
-        <p className="max-w-[240px] text-[11px] leading-[1.5] text-[#444]">Pricing data verified May 4-10, 2026. Not affiliated with any AI vendor.</p>
+        <p className="max-w-[240px] text-[11px] leading-[1.6]">
+          <span className="text-[#555]">Pricing data verified May 4-10, 2026.</span>{" "}
+          <span className="text-[#444]">Not affiliated with any AI vendor.</span>
+        </p>
       </div>
     </footer>
   );

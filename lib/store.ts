@@ -41,8 +41,7 @@ function normalizeTool(tool: Partial<ToolInput> | undefined, toolId: ToolId): To
   const hasValidPersistedPlan = toolDefinition?.plans.some((plan) => plan.id === persistedPlanId);
   const planId = tool?.enabled && hasValidPersistedPlan ? persistedPlanId! : defaultPlanFor(toolId);
   const seats = positiveInteger(tool?.seats ?? 1);
-  const calculatedSpend = calculateMonthlySpend(toolId, planId, seats);
-  const monthlySpend = tool?.monthlySpend === undefined || tool.monthlySpend === 0 ? calculatedSpend : nonNegativeNumber(tool.monthlySpend);
+  const monthlySpend = calculateMonthlySpend(toolId, planId, seats);
 
   return {
     toolId,
@@ -170,6 +169,7 @@ export const useAuditStore = create<AuditStore>()(
     }),
     {
       name: "credex-ai-spend-audit",
+      version: 2,
       storage: createJSONStorage(() => localStorage),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<AuditStore> | undefined;

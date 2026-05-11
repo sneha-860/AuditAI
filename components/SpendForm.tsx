@@ -14,13 +14,13 @@ type FieldErrors = Partial<Record<string, string>>;
 
 const ICONS: Record<ToolId, string> = {
   cursor: "",
-  "github-copilot": "gh",
+  "github-copilot": "◎",
   claude: "*",
-  chatgpt: "o",
-  "anthropic-api": "api",
-  "openai-api": "api",
-  gemini: "<>",
-  windsurf: "~"
+  chatgpt: "◯",
+  "anthropic-api": "⚡",
+  "openai-api": "⚡",
+  gemini: "✦",
+  windsurf: "≋"
 };
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -63,8 +63,8 @@ export function SpendForm() {
   return (
     <form id="spend-form" onSubmit={submitForm} className="content-wrapper scroll-mt-24">
       <div className="mb-4 flex items-baseline justify-between gap-3 border-b-[0.5px] border-[#1a1a1a] pb-3">
-        <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#555]">60-second audit</p>
-        <p className="text-[13px] text-[#666]">
+        <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#777]">60-second audit</p>
+        <p className="text-[13px] text-[#777]">
           Current total: <span className="text-[15px] font-semibold text-[#00e87a]">{money.format(totalMonthlySpend)}</span><span className="text-[13px] text-[#555]">/mo</span>
         </p>
       </div>
@@ -74,10 +74,10 @@ export function SpendForm() {
       <div className="mb-2 hidden items-center gap-3 border-b-[0.5px] border-[#1a1a1a] px-4 pb-2 min-[720px]:flex">
         <span className="w-9 shrink-0" />
         <span className="w-7 shrink-0" />
-        <span className="w-[140px] shrink-0 text-[9px] uppercase tracking-[0.1em] text-[#444]">Tool</span>
-        <span className="min-w-0 flex-1 text-[9px] uppercase tracking-[0.1em] text-[#444]">Plan</span>
-        <span className="w-[52px] shrink-0 text-center text-[9px] uppercase tracking-[0.1em] text-[#444]">Seats</span>
-        <span className="w-[60px] shrink-0 text-right text-[9px] uppercase tracking-[0.1em] text-[#444]">$/mo</span>
+        <span className="w-[140px] shrink-0 text-[9px] uppercase tracking-[0.1em] text-[#666]">Tool</span>
+        <span className="min-w-0 flex-1 text-[9px] uppercase tracking-[0.1em] text-[#666]">Plan</span>
+        <span className="w-[52px] shrink-0 text-center text-[9px] uppercase tracking-[0.1em] text-[#666]">Seats</span>
+        <span className="w-[60px] shrink-0 text-right text-[9px] uppercase tracking-[0.1em] text-[#666]">$/mo</span>
       </div>
 
       <div className="space-y-2">
@@ -111,15 +111,15 @@ export function SpendForm() {
                   className="h-5 w-9 border-0 bg-[#222] data-[state=checked]:bg-[#00e87a] [&>span]:h-4 [&>span]:w-4 [&>span]:bg-[#555] [&>span]:data-[state=checked]:translate-x-4 [&>span]:data-[state=checked]:bg-white"
                 />
                 <div className={cn("flex min-w-0 flex-1 flex-row items-center gap-3", !state.enabled && "[&_*]:pointer-events-none")}>
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#1a1a1a] text-center text-[14px] text-[#777]" aria-hidden="true">
+                  <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#1a1a1a] text-center text-[14px]", state.enabled ? "text-[#00e87a]" : "text-[#333]")} aria-hidden="true">
                     {tool.id === "cursor" ? <Keyboard className="h-4 w-4" /> : ICONS[tool.id]}
                   </span>
-                  <span className={cn("w-[140px] shrink-0 text-[14px] font-medium", state.enabled ? "text-white" : "text-[#888]")}>{tool.name}</span>
+                  <span className={cn("w-[140px] shrink-0 text-[14px] font-medium", state.enabled ? "text-white" : "text-[#aaa]")}>{tool.name}</span>
 
                   {isApiOnly ? (
                     <>
                       <span className="min-w-0 flex-1" />
-                      <label htmlFor={spendInputId} className="shrink-0 text-[11px] text-[#666]">
+                      <label htmlFor={spendInputId} className="shrink-0 text-[11px] text-[#888]">
                         Monthly spend ($)
                       </label>
                       <input
@@ -133,7 +133,7 @@ export function SpendForm() {
                           "h-[34px] w-20 shrink-0 rounded-md border px-2 text-right text-[13px]",
                           state.enabled
                             ? "border-[#00e87a] bg-[#0f2a1e] font-medium text-[#00e87a]"
-                            : "border-[#2a2a2a] bg-[#1a1a1a] text-[#555]"
+                            : "border-[#2a2a2a] bg-[#1a1a1a] text-[#666]"
                         )}
                       />
                     </>
@@ -147,7 +147,7 @@ export function SpendForm() {
                               "h-[34px] w-full rounded-md px-[10px] py-0 text-[12px]",
                               state.enabled
                                 ? "border border-[#00e87a] bg-[#0f2a1e] font-medium text-[#00e87a]"
-                                : "border-[0.5px] border-[#2a2a2a] bg-[#1a1a1a] text-[#555]"
+                                : "border-[0.5px] border-[#2a2a2a] bg-[#1a1a1a] text-[#666]"
                             )}
                           >
                             <SelectValue />
@@ -164,8 +164,7 @@ export function SpendForm() {
                       <label className="sr-only" htmlFor={seatsInputId}>
                         {tool.name} seats
                       </label>
-                      <div className="flex w-[52px] shrink-0 items-center gap-1">
-                        <span className="text-[10px] text-[#444]">x</span>
+                      <div className="flex w-[52px] shrink-0 items-center justify-center">
                         <input
                           id={seatsInputId}
                           type="number"
@@ -175,19 +174,18 @@ export function SpendForm() {
                           onChange={(event) => setToolSeats(tool.id, numberFromInput(event.target.value))}
                           disabled={!state.enabled}
                           className={cn(
-                            "h-[34px] w-[42px] rounded-md px-1 text-center text-[12px]",
+                            "h-[34px] w-[52px] rounded-md px-1 text-center text-[12px]",
                             state.enabled
                               ? "border border-[#00e87a] bg-[#0f2a1e] font-medium text-[#00e87a]"
-                              : "border-[0.5px] border-[#2a2a2a] bg-[#1a1a1a] text-[#444]"
+                              : "border-[0.5px] border-[#2a2a2a] bg-[#1a1a1a] text-[#666]"
                           )}
                         />
                       </div>
-                      <div className="flex w-[60px] shrink-0 items-center justify-end gap-[2px]">
-                        <span className={cn("text-[11px]", state.enabled ? "text-[#00e87a]/75" : "text-[#444]")}>$</span>
-                        <span className={cn("text-[13px] font-medium", state.enabled ? "text-[#00e87a]" : "text-[#444]")}>
-                          {Math.round(state.monthlySpend)}
+                      <div className="flex w-[60px] shrink-0 items-baseline justify-end">
+                        <span className={cn("text-[13px] font-medium", state.enabled ? "text-[#00e87a]" : "text-[#666]")}>
+                          ${Math.round(state.monthlySpend)}
                         </span>
-                        <span className="text-[10px] text-[#444]">/mo</span>
+                        <span className="ml-[2px] text-[10px] text-[#666]">/mo</span>
                       </div>
                     </>
                   )}
@@ -199,7 +197,7 @@ export function SpendForm() {
       </div>
 
       <div className="mt-8 border-t-[0.5px] border-[#1a1a1a] pt-3">
-        <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.12em] text-[#555]">Your team</p>
+        <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.12em] text-[#777]">Your team</p>
         <div className="grid gap-2 sm:grid-cols-3">
           <Field label="Team size" htmlFor="team-size">
             <input id="team-size" type="number" min={1} value={totalTeamSize} onChange={(event) => setTotalTeamSize(numberFromInput(event.target.value))} className="w-full bg-transparent text-[14px] text-[#aaa]" />
@@ -246,7 +244,7 @@ export function SpendForm() {
 function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) {
   return (
     <label htmlFor={htmlFor} className="flex h-16 flex-col justify-center rounded-md border-[0.5px] border-[#1e1e1e] bg-[#111] px-4 py-3">
-      <span className="mb-1 block text-[10px] uppercase tracking-[0.08em] text-[#555]">{label}</span>
+      <span className="mb-1 block text-[10px] uppercase tracking-[0.08em] text-[#666]">{label}</span>
       {children}
     </label>
   );

@@ -33,8 +33,12 @@ export default function LandingPage() {
     >
       <section className="px-6 pb-[72px] pt-24 text-center">
         <p className="inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.12em] text-[#00e87a]/85">
-          <span className="h-1 w-1 rounded-full bg-[#00e87a]" aria-hidden="true" />
-          Free &middot; No signup &middot; Instant results
+          <span className="h-1 w-1 shrink-0 rounded-full bg-[#00e87a] opacity-75" aria-hidden="true" />
+          <span>Free</span>
+          <span className="h-1 w-1 shrink-0 rounded-full bg-[#00e87a] opacity-75" aria-hidden="true" />
+          <span>No signup</span>
+          <span className="h-1 w-1 shrink-0 rounded-full bg-[#00e87a] opacity-75" aria-hidden="true" />
+          <span>Instant results</span>
         </p>
         <h1 className="mx-auto mt-5 max-w-[640px] text-[32px] font-semibold leading-[1.1] text-white md:text-[48px] lg:text-[56px]">
           Stop Overpaying
@@ -46,24 +50,24 @@ export default function LandingPage() {
         </p>
         <a
           href="#spend-form"
-          className="inline-flex rounded-[10px] bg-[#00e87a] px-10 py-4 text-[15px] font-semibold text-black transition hover:-translate-y-px hover:bg-[#00d970] active:translate-y-0"
+          className="inline-flex rounded-[10px] bg-[#00e87a] px-9 py-[14px] text-[15px] font-semibold text-black transition hover:-translate-y-px hover:bg-[#00d970] active:translate-y-0"
         >
           Audit My AI Spend &rarr;
         </a>
-        <p className="mt-4 inline-flex items-center justify-center gap-[6px] text-[12px] text-[#666]">
+        <p className="mt-4 flex items-center justify-center gap-[6px] text-[12px] text-[#666]">
           <Lock className="h-3 w-3 text-[#00e87a]/70" aria-hidden="true" />
           No signup required. We show you savings first.
         </p>
       </section>
 
-      <section className="audit-border border-y border-[#1e1e1e] bg-[#0f0f0f] px-6 py-[14px]">
+      <section className="audit-border border-y border-[#1e1e1e] bg-[#0f0f0f] px-6 py-3">
         {/* Mocked social proof for launch. */}
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-center gap-x-10 gap-y-2 text-[13px]">
-          <span><span className="font-medium text-[#ccc]">847</span><span className="text-[#555]"> audits run</span></span>
-          <span className="text-[18px] text-[#444]" aria-hidden="true">&middot;</span>
-          <span><span className="font-medium text-[#ccc]">$2.3M</span><span className="text-[#555]"> in savings found</span></span>
-          <span className="text-[18px] text-[#444]" aria-hidden="true">&middot;</span>
-          <span><span className="text-[#555]">Avg save: </span><span className="font-medium text-[#ccc]">$180/mo</span></span>
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-center gap-x-8 gap-y-2 text-[13px]">
+          <span><span className="font-medium text-[#ccc]">847</span><span className="text-[#666]"> audits run</span></span>
+          <span className="text-[16px] text-[#444]" aria-hidden="true">&middot;</span>
+          <span><span className="font-medium text-[#ccc]">$2.3M</span><span className="text-[#666]"> in savings found</span></span>
+          <span className="text-[16px] text-[#444]" aria-hidden="true">&middot;</span>
+          <span><span className="text-[#666]">Avg save: </span><span className="font-medium text-[#ccc]">$180/mo</span></span>
         </div>
       </section>
 
