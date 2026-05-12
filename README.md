@@ -23,7 +23,7 @@ npm install
 cp .env.example .env.local
 ```
 
-If `.env.example` is not present, create `.env.local` with the production variables below.
+If `.env.example` is not present, create `.env.local` with the production variables below.   
 
 ```bash
 NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3000
@@ -56,7 +56,7 @@ npm run start:local
 ```bash
 npm run dev          # Next dev server
 npm run dev:local    # Next dev server bound to 127.0.0.1:3000
-npm run build        # Production build
+npm run build        # Production build 
 npm run start:local  # Serve the production build on 127.0.0.1:3000
 npm run lint         # ESLint
 npm run type-check   # TypeScript check
