@@ -128,11 +128,6 @@ Recommended Vercel flow:
 4. Use the default build command: `npm run build`.
 5. Deploy.
 
-After deploy, verify:
-
-- `https://credex.rocks`
-- `https://credex.rocks/audit`
-- `https://credex.rocks/api/og`
 
 ## Architecture Notes
 
