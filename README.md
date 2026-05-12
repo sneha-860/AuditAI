@@ -2,7 +2,7 @@
 
 AuditAI is a production-ready AI spend audit tool for startup teams. It collects AI subscriptions, plans, seats, and API spend, then returns deterministic savings recommendations, a spend health score, an AI-generated summary, lead capture, and shareable audit reports.
 
-Production URL: `https://credex.rocks`
+Production URL: `https://credex-assignment-vercel.vercel.app/`
 
 ## Stack
 
