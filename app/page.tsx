@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { BarChart3, ClipboardList, Lock, Share2 } from "lucide-react";
+import { AuditStats } from "@/components/AuditStats";
 import { SpendForm } from "@/components/SpendForm";
 
 const HOW_IT_WORKS = [
@@ -61,15 +62,7 @@ export default function LandingPage() {
       </section>
 
       <section className="audit-border border-y border-[#1e1e1e] bg-[#0f0f0f] px-6 py-3">
-        {/* MOCKED - illustrative social proof numbers */}
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-center gap-x-8 gap-y-2 text-[13px]">
-          <span><span className="font-medium text-[#ccc]">847</span><span className="text-[#666]"> audits run*</span></span>
-          <span className="text-[16px] text-[#444]" aria-hidden="true">&middot;</span>
-          <span><span className="font-medium text-[#ccc]">$2.3M</span><span className="text-[#666]"> in savings found*</span></span>
-          <span className="text-[16px] text-[#444]" aria-hidden="true">&middot;</span>
-          <span><span className="text-[#666]">Avg save: </span><span className="font-medium text-[#ccc]">$180/mo*</span></span>
-          <span className="basis-full text-center text-[10px] text-[#333]">* Illustrative figures based on audit engine projections</span>
-        </div>
+        <AuditStats />
       </section>
 
       <section id="how-it-works" className="mx-auto max-w-[1100px] px-6 py-12">

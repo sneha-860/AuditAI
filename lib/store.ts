@@ -7,6 +7,7 @@ import type { AuditInput, ToolId, ToolInput } from "@/types";
 
 interface AuditStore extends AuditInput {
   leadCaptureVisibleAt: number | null;
+  setAuditInput: (input: AuditInput) => void;
   setToolEnabled: (toolId: ToolId, enabled: boolean) => void;
   setToolPlan: (toolId: ToolId, planId: string) => void;
   setToolSeats: (toolId: ToolId, seats: number) => void;
@@ -76,11 +77,22 @@ function positiveInteger(value: number): number {
   return Number.isFinite(value) ? Math.max(1, Math.floor(value)) : 1;
 }
 
+function nonNegativeInteger(value: number): number {
+  return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+}
+
 export const useAuditStore = create<AuditStore>()(
   persist(
     (set, get) => ({
       ...initialState,
       leadCaptureVisibleAt: null,
+      setAuditInput: (input) =>
+        set({
+          tools: input.tools,
+          totalTeamSize: nonNegativeInteger(input.totalTeamSize),
+          primaryUseCase: input.primaryUseCase,
+          companyStage: input.companyStage
+        }),
       setToolEnabled: (toolId, enabled) =>
         set((state) => ({
           tools: {
@@ -145,7 +157,7 @@ export const useAuditStore = create<AuditStore>()(
             }
           }
         })),
-      setTotalTeamSize: (totalTeamSize) => set({ totalTeamSize: positiveInteger(totalTeamSize) }),
+      setTotalTeamSize: (totalTeamSize) => set({ totalTeamSize: nonNegativeInteger(totalTeamSize) }),
       setPrimaryUseCase: (primaryUseCase) => set({ primaryUseCase }),
       setCompanyStage: (companyStage) => set({ companyStage }),
       markLeadCaptureVisible: () =>

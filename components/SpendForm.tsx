@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { Keyboard, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { useAuditValidation } from "@/hooks/useAuditValidation";
 import { cn } from "@/lib/utils";
-import { COMPANY_STAGES, PRIMARY_USE_CASES, TOOLS, getPlan } from "@/lib/pricing";
+import { calculateMonthlySpend, COMPANY_STAGES, PRIMARY_USE_CASES, TOOLS, getPlan } from "@/lib/pricing";
 import { useAuditStore } from "@/lib/store";
-import type { ToolId } from "@/types";
-
-type FieldErrors = Partial<Record<string, string>>;
+import { useAuditResultsStore } from "@/store/auditStore";
+import type { AuditInput, ToolId, ToolInput } from "@/types";
 
 const ICONS: Record<ToolId, string> = {
   cursor: "",
@@ -31,7 +31,6 @@ function numberFromInput(value: string): number {
 
 export function SpendForm() {
   const router = useRouter();
-  const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const {
     tools,
@@ -42,21 +41,38 @@ export function SpendForm() {
     setToolPlan,
     setToolSeats,
     setToolMonthlySpend,
+    setAuditInput,
     setTotalTeamSize,
     setPrimaryUseCase,
     setCompanyStage
   } = useAuditStore();
+  const runAudit = useAuditResultsStore((state) => state.runAudit);
+  const auditInput = useMemo(
+    () => ({ tools, totalTeamSize, primaryUseCase, companyStage }),
+    [tools, totalTeamSize, primaryUseCase, companyStage]
+  );
+  const { isValid, errors, hasOnlyFreeTools, validate } = useAuditValidation(auditInput);
 
   const enabledTools = useMemo(() => Object.values(tools).filter((tool) => tool.enabled), [tools]);
   const totalMonthlySpend = enabledTools.reduce((sum, tool) => sum + tool.monthlySpend, 0);
 
   function submitForm(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (enabledTools.length === 0) {
-      setErrors({ tools: "Enable at least one AI tool to calculate savings." });
+    if (!validate(auditInput)) {
       return;
     }
+
     setSubmitting(true);
+    runAudit(auditInput);
+    router.push("/audit");
+  }
+
+  function tryExampleStartup() {
+    const exampleInput = createExampleAuditInput(auditInput);
+
+    setSubmitting(true);
+    setAuditInput(exampleInput);
+    runAudit(exampleInput);
     router.push("/audit");
   }
 
@@ -69,8 +85,6 @@ export function SpendForm() {
         </p>
       </div>
 
-      {errors.tools ? <p className="mb-3 rounded-md border-[0.5px] border-[#3d1515] bg-[#110a0a] px-3 py-2 text-[12px] text-[#ef4444]">{errors.tools}</p> : null}
-
       <div className="mb-2 hidden items-center gap-3 border-b-[0.5px] border-[#1a1a1a] px-4 pb-2 min-[720px]:flex">
         <span className="w-9 shrink-0" />
         <span className="w-7 shrink-0" />
@@ -80,7 +94,7 @@ export function SpendForm() {
         <span className="w-[60px] shrink-0 text-right text-[9px] uppercase tracking-[0.1em] text-[#666]">$/mo</span>
       </div>
 
-      <div className="space-y-2">
+      <div className={cn("space-y-2 rounded-lg transition", errors.tools && "border border-[#ef4444] p-2")}>
         {TOOLS.map((tool) => {
           const state = tools[tool.id];
           const selectedPlan = getPlan(tool.id, state.planId);
@@ -101,10 +115,7 @@ export function SpendForm() {
               <div className="flex w-full min-w-[640px] flex-row items-center gap-3">
                 <Switch
                   checked={state.enabled}
-                  onCheckedChange={(checked) => {
-                    setToolEnabled(tool.id, checked);
-                    setErrors({});
-                  }}
+                  onCheckedChange={(checked) => setToolEnabled(tool.id, checked)}
                   role="switch"
                   aria-checked={state.enabled}
                   aria-label={`Enable ${tool.name}`}
@@ -199,12 +210,25 @@ export function SpendForm() {
           );
         })}
       </div>
+      {errors.tools ? <p className="mt-2 text-[12px] text-[#ef4444]">{errors.tools}</p> : null}
+      {hasOnlyFreeTools ? (
+        <div className="mt-3 rounded-md border-[0.5px] border-[#4a3511] bg-[#151106] px-3 py-2 text-[12px] text-[#fbbf24]">
+          All your selected tools are free &mdash; add paid tools to find savings
+        </div>
+      ) : null}
 
       <div className="mt-8 border-t-[0.5px] border-[#1a1a1a] pt-3">
         <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.12em] text-[#777]">Your team</p>
         <div className="grid gap-2 sm:grid-cols-3">
-          <Field label="Team size" htmlFor="team-size">
-            <input id="team-size" type="number" min={1} value={totalTeamSize} onChange={(event) => setTotalTeamSize(numberFromInput(event.target.value))} className="w-full bg-transparent text-[14px] text-[#aaa]" />
+          <Field label="Team size" htmlFor="team-size" error={errors.teamSize}>
+            <input
+              id="team-size"
+              type="number"
+              min={1}
+              value={totalTeamSize === 0 ? "" : totalTeamSize}
+              onChange={(event) => setTotalTeamSize(numberFromInput(event.target.value))}
+              className="w-full bg-transparent text-[14px] text-[#aaa]"
+            />
           </Field>
           <Field label="Primary use">
             <Select value={primaryUseCase} onValueChange={setPrimaryUseCase}>
@@ -237,19 +261,90 @@ export function SpendForm() {
         </div>
       </div>
 
-      <button type="submit" disabled={enabledTools.length === 0 || submitting} className="mt-6 flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#00e87a] p-4 text-[15px] font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40">
-        {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
-        {submitting ? "Analyzing..." : "Calculate My Savings"}
-      </button>
+      <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]">
+        <span className="group relative block" title={!isValid ? "Select at least one tool" : undefined}>
+          <button
+            type="submit"
+            disabled={!isValid || submitting}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-[10px] p-4 text-[15px] font-semibold transition",
+              isValid
+                ? "bg-[#00e87a] text-black hover:brightness-110"
+                : "cursor-not-allowed bg-[#2a2a2a] text-[#777]"
+            )}
+          >
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
+            {submitting ? "Analyzing..." : "Calculate My Savings"}
+          </button>
+          {!isValid ? (
+            <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border-[0.5px] border-[#2a2a2a] bg-[#111] px-3 py-2 text-[11px] text-[#ddd] shadow-lg group-hover:block">
+              Select at least one tool
+            </span>
+          ) : null}
+        </span>
+        <button
+          type="button"
+          onClick={tryExampleStartup}
+          disabled={submitting}
+          className="rounded-[10px] border-[0.5px] border-[#2a2a2a] bg-[#111] px-5 py-4 text-[13px] font-medium text-[#ddd] transition hover:bg-[#161616] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Try with example startup &rarr;
+        </button>
+      </div>
     </form>
   );
 }
 
-function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) {
+function Field({ label, htmlFor, error, children }: { label: string; htmlFor?: string; error?: string; children: React.ReactNode }) {
   return (
-    <label htmlFor={htmlFor} className="flex h-16 flex-col justify-center rounded-md border-[0.5px] border-[#1e1e1e] bg-[#111] px-4 py-3">
-      <span className="mb-1 block text-[10px] uppercase tracking-[0.08em] text-[#666]">{label}</span>
-      {children}
-    </label>
+    <div>
+      <label htmlFor={htmlFor} className={cn("flex h-16 flex-col justify-center rounded-md border-[0.5px] bg-[#111] px-4 py-3", error ? "border-[#ef4444]" : "border-[#1e1e1e]")}>
+        <span className="mb-1 block text-[10px] uppercase tracking-[0.08em] text-[#666]">{label}</span>
+        {children}
+      </label>
+      {error ? <p className="mt-2 text-[12px] text-[#ef4444]">{error}</p> : null}
+    </div>
   );
+}
+
+function createExampleAuditInput(current: AuditInput): AuditInput {
+  const tools = TOOLS.reduce<Record<ToolId, ToolInput>>((acc, tool) => {
+    acc[tool.id] = {
+      ...current.tools[tool.id],
+      toolId: tool.id,
+      enabled: false,
+      seats: 1,
+      monthlySpend: calculateMonthlySpend(tool.id, current.tools[tool.id].planId, 1)
+    };
+    return acc;
+  }, {} as Record<ToolId, ToolInput>);
+
+  tools.cursor = paidTool("cursor", "pro", 5);
+  tools.claude = paidTool("claude", "pro", 10);
+  tools.chatgpt = paidTool("chatgpt", "plus", 10);
+  tools["anthropic-api"] = {
+    ...tools["anthropic-api"],
+    enabled: true,
+    planId: "monthly-spend",
+    seats: 1,
+    monthlySpend: 300
+  };
+
+  return {
+    tools,
+    totalTeamSize: 10,
+    primaryUseCase: "Mixed",
+    companyStage: "Growth (11-50)"
+  };
+}
+
+function paidTool(toolId: ToolId, planId: string, seats: number): ToolInput {
+  return {
+    toolId,
+    enabled: true,
+    planId,
+    seats,
+    monthlySpend: calculateMonthlySpend(toolId, planId, seats),
+    avgTokensMonthly: 0
+  };
 }

@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: SharedAuditPageProps): Promis
   const savings = Math.round(report.totalMonthlySavings);
   const title = `I could save $${savings}/month on AI tools`;
   const description = `${report.toolResults.length} AI tools audited. $${savings}/month in potential savings found.`;
-  const imageUrl = `${siteOrigin}/api/og?savings=${encodeURIComponent(String(savings))}`;
+  const imageUrl = `${siteOrigin}/audit/share/${token}/opengraph-image`;
   return {
     title,
     description,
