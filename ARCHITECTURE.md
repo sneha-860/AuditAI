@@ -17,7 +17,7 @@ flowchart LR
 
 ## Data Flow
 
-The user starts on the landing page and enters AI tools, plan IDs, seat counts, monthly spend, team size, company stage, and primary use case. `components/SpendForm.tsx` writes those values into the Zustand store in `lib/store.ts`, which also persists the draft locally so refreshes do not wipe the audit.
+The user starts on the landing page and enters AI tools, plan IDs, seat counts, monthly spend, team size, company stage, and primary use case. `components/SpendForm.tsx` writes those values into the Zustand store in `lib/store.ts`. The form state is intentionally in-memory so a fresh page load starts from default entries instead of reusing stale browser data.
 
 When the user runs the audit, the app navigates to the results page and passes the current `AuditInput` into `analyzeSpend` in `lib/auditEngine.ts`. The engine calculates enabled tools, total monthly and annual spend, plan-fit issues, redundant tool pairs, unused seats, API-versus-subscription checks, discounted-credit eligibility, health score, per-tool results, and deterministic fallback summary text.
 
@@ -31,7 +31,7 @@ Public share pages use `lib/sharedAudit.ts` to read the audit JSON by share toke
 
 Next.js App Router gives the project a single framework for the landing page, client audit UI, API routes, Open Graph image route, and share pages. React client components are used where form state and result interactions need browser APIs.
 
-Zustand keeps the multi-tool form state small and predictable. It avoids a larger Redux setup while still giving the app a central store, actions, and local-storage persistence.
+Zustand keeps the multi-tool form state small and predictable. It avoids a larger Redux setup while still giving the app a central store and clear actions without persisting private draft data in browser storage.
 
 Supabase is used because the backend is fundamentally relational: leads, unique share tokens, timestamps, IP hashes, and JSON audit payloads. Postgres also makes rate-limit checks and future analytics straightforward.
 

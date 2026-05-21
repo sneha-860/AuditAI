@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { getSiteHost } from "@/lib/siteUrl";
 
 export const size = {
   width: 1200,
@@ -8,6 +9,8 @@ export const size = {
 export const contentType = "image/png";
 
 export default function Image() {
+  const siteHost = getSiteHost();
+
   return new ImageResponse(
     (
       <div
@@ -111,7 +114,7 @@ export default function Image() {
             color: "#666666"
           }}
         >
-          auditai.vercel.app
+          {siteHost}
         </div>
       </div>
     ),

@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
+import { corsPreflight, withCors } from "@/lib/cors";
 import type { AuditResult, Recommendation } from "@/types/audit";
 
 interface SendReportRequest {
@@ -19,7 +20,9 @@ const dollars = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0
 });
 
-export async function POST(request: Request): Promise<NextResponse<SendReportResponse | { error: string }>> {
+export const OPTIONS = corsPreflight;
+
+export const POST = withCors(async function POST(request: Request): Promise<NextResponse<SendReportResponse | { error: string }>> {
   let body: SendReportRequest;
 
   try {
@@ -65,7 +68,7 @@ export async function POST(request: Request): Promise<NextResponse<SendReportRes
     console.error("Failed to send AuditAI report", error);
     return NextResponse.json({ error: "Unable to send report. Please try again." }, { status: 500 });
   }
-}
+});
 
 function isAuditResult(value: unknown): value is AuditResult {
   if (!value || typeof value !== "object") {

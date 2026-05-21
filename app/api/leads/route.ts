@@ -1,50 +1,158 @@
-import { createHash } from "crypto";
-import { nanoid } from "nanoid";
+import { createHash, randomUUID } from "crypto";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
+import { Ratelimit } from "@upstash/ratelimit";
+import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { sanitizeAuditReport } from "@/lib/auditPayload";
 import { generateAuditSummary } from "@/lib/auditSummary";
+import { corsPreflight, withCors } from "@/lib/cors";
 import { formatDollars } from "@/lib/format";
-import type { AuditInput, AuditReport } from "@/types";
+import type { AuditReport } from "@/types";
 
 /*
 Abuse protection uses three layers:
 1. Honeypot field: LeadCapture includes a visually hidden "website" input. Bots often fill it; humans should not.
-2. IP rate limiting: the request IP is SHA-256 hashed before storage, then Supabase counts submissions in the past hour. Limit: 5/hour.
+2. IP rate limiting: Vercel's x-forwarded-for IP is limited through Vercel KV. Limit: 5/hour.
 3. Minimum time check: LeadCapture sends visibleForMs from Zustand; submissions under 3 seconds are rejected.
 */
 
-type LeadRequest = {
-  email?: string;
-  companyName?: string;
-  role?: string;
-  website?: string;
-  visibleForMs?: number;
-  input?: AuditInput;
-  report?: AuditReport;
-};
+const AUDIT_TTL_SECONDS = 86400;
+const ratelimit = new Ratelimit({
+  redis: kv,
+  limiter: Ratelimit.slidingWindow(5, "1 h")
+});
+const TOOL_IDS = ["cursor", "github-copilot", "claude", "chatgpt", "anthropic-api", "openai-api", "gemini", "windsurf"] as const;
+const PRIMARY_USE_CASES = ["Coding", "Writing", "Data Analysis", "Research", "Mixed"] as const;
+const COMPANY_STAGES = ["Solo/Freelance", "Early Startup (2-10)", "Growth (11-50)", "Scale (51+)"] as const;
+const ROLES = ["Founder/CEO", "CTO/Engineering Lead", "Engineering Manager", "Developer", "Finance/Ops", "Other"] as const;
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function toolInputSchema(toolId: (typeof TOOL_IDS)[number]) {
+  return z
+    .object({
+      toolId: z.literal(toolId),
+      enabled: z.boolean(),
+      planId: z.string().min(1),
+      seats: z.number().int().min(0),
+      monthlySpend: z.number().min(0),
+      avgTokensMonthly: z.number().int().min(0).optional()
+    })
+    .strict();
+}
 
-export async function POST(request: Request) {
-  let body: LeadRequest;
+const auditInputSchema = z
+  .object({
+    tools: z
+      .object({
+        cursor: toolInputSchema("cursor"),
+        "github-copilot": toolInputSchema("github-copilot"),
+        claude: toolInputSchema("claude"),
+        chatgpt: toolInputSchema("chatgpt"),
+        "anthropic-api": toolInputSchema("anthropic-api"),
+        "openai-api": toolInputSchema("openai-api"),
+        gemini: toolInputSchema("gemini"),
+        windsurf: toolInputSchema("windsurf")
+      })
+      .strict(),
+    totalTeamSize: z.number().int().min(0),
+    primaryUseCase: z.enum(PRIMARY_USE_CASES),
+    companyStage: z.enum(COMPANY_STAGES)
+  })
+  .strict();
+
+const toolResultSchema = z
+  .object({
+    toolId: z.enum(TOOL_IDS),
+    toolName: z.string().min(1),
+    planName: z.string().min(1).optional(),
+    currentSpend: z.number().min(0),
+    recommendedSpend: z.number().min(0),
+    estimatedSavings: z.number().min(0),
+    recommendation: z.string().min(1),
+    status: z.enum(["optimal", "minor", "action"]).optional(),
+    reason: z.string().min(1).optional()
+  })
+  .strict();
+
+const recommendationSchema = z
+  .object({
+    id: z.string().min(1),
+    category: z.enum(["plan-fit", "redundancy", "alternative", "credits", "usage", "status"]),
+    toolIds: z.array(z.enum(TOOL_IDS)),
+    title: z.string().min(1),
+    action: z.string().min(1),
+    currentCost: z.number().min(0),
+    recommendedCost: z.number().min(0),
+    monthlySavings: z.number().min(0),
+    annualSavings: z.number().min(0),
+    confidence: z.enum(["high", "medium", "low"]),
+    reason: z.string().min(1),
+    severity: z.enum(["good", "minor", "action"])
+  })
+  .strict();
+
+const auditReportSchema = z
+  .object({
+    totalMonthlySpend: z.number().min(0),
+    totalAnnualSpend: z.number().min(0),
+    totalMonthlySavings: z.number().min(0),
+    totalAnnualSavings: z.number().min(0),
+    isHighValue: z.boolean(),
+    healthScore: z.number().int().min(0).max(100),
+    toolResults: z.array(toolResultSchema),
+    recommendations: z.array(recommendationSchema),
+    creditsOpportunity: z
+      .object({
+        eligible: z.boolean(),
+        prominent: z.boolean(),
+        tools: z.array(z.string().min(1)),
+        message: z.string().min(1)
+      })
+      .strict()
+      .optional(),
+    summary: z.string()
+  })
+  .strict();
+
+const leadRequestSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().email(),
+    companyName: z.string().trim().optional(),
+    role: z.enum(ROLES).optional(),
+    website: z.string().optional(),
+    visibleForMs: z.number().int().min(0).optional(),
+    input: auditInputSchema,
+    report: auditReportSchema
+  })
+  .strict();
+
+type LeadRequest = z.infer<typeof leadRequestSchema>;
+
+export const OPTIONS = corsPreflight;
+
+export const POST = withCors(async function POST(request: Request) {
+  let requestBody: unknown;
 
   try {
-    body = (await request.json()) as LeadRequest;
+    requestBody = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
   }
 
-  const email = body.email?.trim().toLowerCase() ?? "";
-  const honeypotTriggered = Boolean(body.website?.trim());
-
-  if (!EMAIL_PATTERN.test(email)) {
-    return NextResponse.json({ error: "A valid email is required." }, { status: 400 });
+  const parsedBody = leadRequestSchema.safeParse(requestBody);
+  if (!parsedBody.success) {
+    return NextResponse.json({ error: "Invalid request payload.", validationErrors: parsedBody.error.flatten() }, { status: 400 });
   }
 
-  if (!body.input || !body.report) {
-    return NextResponse.json({ error: "Audit data is required." }, { status: 400 });
+  const body: LeadRequest = parsedBody.data;
+  const email = body.email;
+  const honeypotTriggered = Boolean(body.website?.trim());
+  const clientIp = getClientIp(request);
+
+  const { success } = await ratelimit.limit(`audit:${clientIp}`);
+  if (!success) {
+    return NextResponse.json({ error: "Too many requests, try again later" }, { status: 429 });
   }
 
   const report = sanitizeAuditReport(body.report);
@@ -62,9 +170,9 @@ export async function POST(request: Request) {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const shareToken = nanoid(10);
+  const shareToken = randomUUID();
   const shareUrl = `/audit/share/${shareToken}`;
-  const ipHash = hashIp(getClientIp(request));
+  const ipHash = hashIp(clientIp);
   const isHighValue = report.isHighValue || report.totalMonthlySpend > 500;
   const summary = await generateAuditSummary({ input: body.input, report });
   const reportWithSummary: AuditReport = {
@@ -72,35 +180,27 @@ export async function POST(request: Request) {
     summary
   };
 
+  try {
+    await kv.set(shareToken, reportWithSummary, { ex: AUDIT_TTL_SECONDS });
+  } catch (error) {
+    console.error("Failed to store audit in Vercel KV", error);
+    return NextResponse.json({ error: "Unable to store audit report." }, { status: 500 });
+  }
+
   if (!supabaseUrl || !serviceRoleKey) {
-    const emailDelivered = await sendAuditEmail({
+    const emailSent = await trySendAuditEmail({
       email,
       companyName: body.companyName,
       report: reportWithSummary,
       summary,
-      shareUrl: null,
+      shareUrl: absoluteUrl(request, shareUrl),
       isHighValue
     });
 
-    return NextResponse.json({ ok: true, configured: false, emailDelivered, shareUrl: null }, { status: 202 });
+    return NextResponse.json({ ok: true, configured: false, emailSent, shareUrl });
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  const { count, error: countError } = await supabase
-    .from("leads")
-    .select("id", { count: "exact", head: true })
-    .eq("ip_hash", ipHash)
-    .gte("created_at", oneHourAgo);
-
-  if (countError) {
-    return NextResponse.json({ error: countError.message }, { status: 500 });
-  }
-
-  if ((count ?? 0) >= 5) {
-    return NextResponse.json({ error: "Too many submissions. Please try again later." }, { status: 429 });
-  }
-
   const { error } = await supabase.from("leads").insert({
     email,
     company_name: body.companyName?.trim() || null,
@@ -118,7 +218,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const emailDelivered = await sendAuditEmail({
+  const emailSent = await trySendAuditEmail({
     email,
     companyName: body.companyName,
     report: reportWithSummary,
@@ -127,8 +227,8 @@ export async function POST(request: Request) {
     isHighValue
   });
 
-  return NextResponse.json({ ok: true, emailDelivered, shareUrl });
-}
+  return NextResponse.json({ ok: true, emailSent, shareUrl });
+});
 
 function getClientIp(request: Request): string {
   const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
@@ -143,6 +243,22 @@ function hashIp(ip: string): string {
 function absoluteUrl(request: Request, path: string): string {
   const origin = request.headers.get("origin") ?? new URL(request.url).origin;
   return `${origin}${path}`;
+}
+
+async function trySendAuditEmail(options: {
+  email: string;
+  companyName?: string;
+  report: AuditReport;
+  summary: string;
+  shareUrl: string | null;
+  isHighValue: boolean;
+}): Promise<boolean> {
+  try {
+    return await sendAuditEmail(options);
+  } catch (error) {
+    console.error("Failed to send audit email", error);
+    return false;
+  }
 }
 
 async function sendAuditEmail({
@@ -165,22 +281,17 @@ async function sendAuditEmail({
     return false;
   }
 
-  try {
-    const resend = new Resend(apiKey);
-    const company = companyName?.trim() || "your team";
+  const resend = new Resend(apiKey);
+  const company = companyName?.trim() || "your team";
 
-    await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL ?? "Credex <onboarding@resend.dev>",
-      to: email,
-      subject: `Your AI Spend Audit - ${company} saves ${formatDollars(report.totalMonthlySavings)}/month`,
-      html: buildEmailHtml({ company, report, summary, shareUrl, isHighValue })
-    });
+  await resend.emails.send({
+    from: process.env.RESEND_FROM_EMAIL ?? "Credex <onboarding@resend.dev>",
+    to: email,
+    subject: `Your AI Spend Audit - ${company} saves ${formatDollars(report.totalMonthlySavings)}/month`,
+    html: buildEmailHtml({ company, report, summary, shareUrl, isHighValue })
+  });
 
-    return true;
-  } catch (error) {
-    console.error("Failed to send audit email", error);
-    return false;
-  }
+  return true;
 }
 
 function buildEmailHtml({

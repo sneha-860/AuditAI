@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sanitizeAuditReport } from "@/lib/auditPayload";
 import { buildFallbackSummary, generateAuditSummary } from "@/lib/auditSummary";
+import { corsPreflight, withCors } from "@/lib/cors";
 import type { AuditInput, AuditReport } from "@/types";
 
 /*
@@ -35,7 +36,9 @@ ${topFinding}. Review the breakdown below and consider acting on the
 highest-confidence recommendations first."
 */
 
-export async function POST(request: Request) {
+export const OPTIONS = corsPreflight;
+
+export const POST = withCors(async function POST(request: Request) {
   let body: { input?: AuditInput; report?: AuditReport };
 
   try {
@@ -61,4 +64,4 @@ export async function POST(request: Request) {
   return NextResponse.json({
     summary: summary || buildFallbackSummary({ input: body.input, report })
   });
-}
+});

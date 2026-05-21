@@ -17,6 +17,8 @@
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-switch": "^1.1.1",
     "@supabase/supabase-js": "^2.45.4",
+    "@upstash/ratelimit": "^2.0.8",
+    "@vercel/kv": "^3.0.0",
     "@vercel/og": "^0.11.1",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.0",
@@ -31,6 +33,7 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.6.3",
+    "zod": "^4.4.3",
     "zustand": "^5.0.1"
   },
   "devDependencies": {

@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Link2Off } from "lucide-react";
 import { ShareAuditButton } from "@/components/ShareAuditButton";
-import { getSharedAuditReport, getSiteOrigin } from "@/lib/sharedAudit";
+import { getSharedAuditReport } from "@/lib/sharedAudit";
 import { formatDollars } from "@/lib/format";
+import { getSiteOrigin } from "@/lib/siteUrl";
 import { cn } from "@/lib/utils";
 import type { AuditReport, ToolResult } from "@/types";
 
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: SharedAuditPageProps): Promis
   const { token } = await params;
   const report = await getSharedAuditReport(token);
   if (!report) {
-    return { title: "Audit not found | AuditAI", description: "This audit link may have expired or does not exist.", robots: { index: false, follow: false } };
+    return { title: "Audit not found | AuditAI", description: "This audit has expired or doesn't exist.", robots: { index: false, follow: false } };
   }
   const siteOrigin = getSiteOrigin();
   const savings = Math.round(report.totalMonthlySavings);
@@ -40,6 +41,7 @@ export async function generateMetadata({ params }: SharedAuditPageProps): Promis
       description: `${report.toolResults.length} tools audited. Free audit at AuditAI.`,
       type: "website",
       url: `${siteOrigin}/audit/share/${token}`,
+      siteName: "AuditAI",
       images: [{ url: imageUrl, width: 1200, height: 630, alt: title }]
     },
     twitter: { card: "summary_large_image", title, description, images: [imageUrl] }
@@ -137,9 +139,9 @@ function InvalidAuditLink() {
       <div className="max-w-md text-center">
         <Link2Off className="mx-auto mb-5 h-12 w-12 text-[#444]" aria-hidden="true" />
         <h1 className="text-[18px] font-medium text-white">Audit not found</h1>
-        <p className="mt-3 text-[14px] text-[#888]">This link may have expired or doesn&apos;t exist.</p>
+        <p className="mt-3 text-[14px] leading-[1.6] text-[#888]">This audit has expired or doesn&apos;t exist.</p>
         <Link href="/" className="mt-6 inline-flex rounded-lg bg-[#00e87a] px-5 py-3 text-[13px] font-semibold text-black">
-          Run your own free audit &rarr;
+          Create a new audit &rarr;
         </Link>
       </div>
     </main>

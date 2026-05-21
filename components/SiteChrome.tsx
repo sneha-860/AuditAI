@@ -8,23 +8,25 @@ export function SiteHeader() {
   const isSharePage = pathname.startsWith("/audit/share/");
 
   return (
-    <header className="sticky top-0 z-40 audit-border border-b border-[#1a1a1a] bg-[#0a0a0a]/80 backdrop-blur">
-      <div className="mx-auto flex h-[60px] max-w-[1200px] items-center justify-between px-6 sm:px-12">
-        <Link href="/" className="flex items-center gap-2 text-[16px] font-medium text-white" aria-label="AuditAI home">
-          <span className="h-2 w-2 rounded-full bg-[#00e87a]" aria-hidden="true" />
-          AuditAI
+    <header className="sticky top-0 z-40 border-b-[0.5px] border-[#1f1f1f] bg-[#090909]/90 backdrop-blur-xl">
+      <div className="mx-auto flex h-[72px] max-w-[1200px] items-center justify-between px-6 sm:px-10">
+        <Link href="/" className="flex items-center gap-3 text-[16px] font-semibold text-white" aria-label="AuditAI home">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-[#1a4030] bg-[#0d1f18]">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#00e87a]" aria-hidden="true" />
+          </span>
+          <span>AuditAI</span>
         </Link>
-        <nav className="flex items-center gap-8" aria-label="Primary navigation">
+        <nav className="flex items-center gap-5" aria-label="Primary navigation">
           {isSharePage ? (
             <Link href="/#spend-form" className="text-[13px] font-medium text-[#00e87a]/75 transition-colors duration-150 hover:text-[#00e87a]">
               Run your free audit &rarr;
             </Link>
           ) : (
             <>
-              <Link href="/#how-it-works" className="hidden text-[13px] tracking-[0.01em] text-[#999] transition-colors duration-150 hover:text-white sm:inline">
+              <Link href="/#how-it-works" className="hidden text-[14px] font-medium text-[#8f8f8f] transition-colors duration-150 hover:text-white sm:inline">
                 How it works
               </Link>
-              <Link href="/#spend-form" className="rounded-lg bg-[#00e87a] px-5 py-[9px] text-[13px] font-semibold tracking-[0.01em] text-black transition-all duration-150 ease-in-out hover:-translate-y-px hover:bg-[#00d470]">
+              <Link href="/#spend-form" className="rounded-lg bg-[#00e87a] px-5 py-[11px] text-[14px] font-semibold text-black transition-all duration-150 ease-in-out hover:-translate-y-px hover:bg-[#00d470]">
                 Run Audit &rarr;
               </Link>
             </>

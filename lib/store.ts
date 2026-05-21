@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
 import { calculateMonthlySpend, TOOLS } from "@/lib/pricing";
 import type { AuditInput, ToolId, ToolInput } from "@/types";
 
@@ -82,120 +81,100 @@ function nonNegativeInteger(value: number): number {
 }
 
 export const useAuditStore = create<AuditStore>()(
-  persist(
-    (set, get) => ({
-      ...initialState,
-      leadCaptureVisibleAt: null,
-      setAuditInput: (input) =>
-        set({
-          tools: input.tools,
-          totalTeamSize: nonNegativeInteger(input.totalTeamSize),
-          primaryUseCase: input.primaryUseCase,
-          companyStage: input.companyStage
-        }),
-      setToolEnabled: (toolId, enabled) =>
-        set((state) => ({
-          tools: {
-            ...state.tools,
-            [toolId]: {
-              ...state.tools[toolId],
-              enabled
-            }
+  (set, get) => ({
+    ...initialState,
+    leadCaptureVisibleAt: null,
+    setAuditInput: (input) =>
+      set({
+        tools: input.tools,
+        totalTeamSize: nonNegativeInteger(input.totalTeamSize),
+        primaryUseCase: input.primaryUseCase,
+        companyStage: input.companyStage
+      }),
+    setToolEnabled: (toolId, enabled) =>
+      set((state) => ({
+        tools: {
+          ...state.tools,
+          [toolId]: {
+            ...state.tools[toolId],
+            enabled
           }
-        })),
-      setToolPlan: (toolId, planId) =>
-        set((state) => {
-          const current = state.tools[toolId];
-          const monthlySpend = calculateMonthlySpend(toolId, planId, current.seats);
-
-          return {
-            tools: {
-              ...state.tools,
-              [toolId]: {
-                ...current,
-                planId,
-                monthlySpend
-              }
-            }
-          };
-        }),
-      setToolSeats: (toolId, seats) =>
-        set((state) => {
-          const normalizedSeats = positiveInteger(seats);
-          const current = state.tools[toolId];
-          const monthlySpend = calculateMonthlySpend(toolId, current.planId, normalizedSeats);
-          const nextSpend = monthlySpend > 0 ? monthlySpend : current.monthlySpend;
-
-          return {
-            tools: {
-              ...state.tools,
-              [toolId]: {
-                ...current,
-                seats: normalizedSeats,
-                monthlySpend: nextSpend
-              }
-            }
-          };
-        }),
-      setToolMonthlySpend: (toolId, monthlySpend) =>
-        set((state) => ({
-          tools: {
-            ...state.tools,
-            [toolId]: {
-              ...state.tools[toolId],
-              monthlySpend: nonNegativeNumber(monthlySpend)
-            }
-          }
-        })),
-      setToolAvgTokensMonthly: (toolId, avgTokensMonthly) =>
-        set((state) => ({
-          tools: {
-            ...state.tools,
-            [toolId]: {
-              ...state.tools[toolId],
-              avgTokensMonthly: nonNegativeNumber(avgTokensMonthly)
-            }
-          }
-        })),
-      setTotalTeamSize: (totalTeamSize) => set({ totalTeamSize: nonNegativeInteger(totalTeamSize) }),
-      setPrimaryUseCase: (primaryUseCase) => set({ primaryUseCase }),
-      setCompanyStage: (companyStage) => set({ companyStage }),
-      markLeadCaptureVisible: () =>
-        set((state) => ({
-          leadCaptureVisibleAt: state.leadCaptureVisibleAt ?? Date.now()
-        })),
-      getLeadCaptureVisibleForMs: () => {
-        const visibleAt = get().leadCaptureVisibleAt;
-        return visibleAt ? Date.now() - visibleAt : 0;
-      },
-      getAuditInput: () => {
-        const state = get();
+        }
+      })),
+    setToolPlan: (toolId, planId) =>
+      set((state) => {
+        const current = state.tools[toolId];
+        const monthlySpend = calculateMonthlySpend(toolId, planId, current.seats);
 
         return {
-          tools: state.tools,
-          totalTeamSize: state.totalTeamSize,
-          primaryUseCase: state.primaryUseCase,
-          companyStage: state.companyStage
+          tools: {
+            ...state.tools,
+            [toolId]: {
+              ...current,
+              planId,
+              monthlySpend
+            }
+          }
         };
-      }
-    }),
-    {
-      name: "credex-ai-spend-audit",
-      version: 2,
-      storage: createJSONStorage(() => localStorage),
-      merge: (persistedState, currentState) => {
-        const persisted = persistedState as Partial<AuditStore> | undefined;
-        const persistedTools = (persisted?.tools ?? {}) as Partial<Record<ToolId, Partial<ToolInput>>>;
+      }),
+    setToolSeats: (toolId, seats) =>
+      set((state) => {
+        const normalizedSeats = positiveInteger(seats);
+        const current = state.tools[toolId];
+        const monthlySpend = calculateMonthlySpend(toolId, current.planId, normalizedSeats);
+        const nextSpend = monthlySpend > 0 ? monthlySpend : current.monthlySpend;
 
         return {
-          ...currentState,
-          ...persisted,
-          tools: TOOLS.reduce<Record<ToolId, ToolInput>>((acc, tool) => {
-            acc[tool.id] = normalizeTool(persistedTools[tool.id], tool.id);
-            return acc;
-          }, {} as Record<ToolId, ToolInput>)
+          tools: {
+            ...state.tools,
+            [toolId]: {
+              ...current,
+              seats: normalizedSeats,
+              monthlySpend: nextSpend
+            }
+          }
         };
-      }
+      }),
+    setToolMonthlySpend: (toolId, monthlySpend) =>
+      set((state) => ({
+        tools: {
+          ...state.tools,
+          [toolId]: {
+            ...state.tools[toolId],
+            monthlySpend: nonNegativeNumber(monthlySpend)
+          }
+        }
+      })),
+    setToolAvgTokensMonthly: (toolId, avgTokensMonthly) =>
+      set((state) => ({
+        tools: {
+          ...state.tools,
+          [toolId]: {
+            ...state.tools[toolId],
+            avgTokensMonthly: nonNegativeNumber(avgTokensMonthly)
+          }
+        }
+      })),
+    setTotalTeamSize: (totalTeamSize) => set({ totalTeamSize: nonNegativeInteger(totalTeamSize) }),
+    setPrimaryUseCase: (primaryUseCase) => set({ primaryUseCase }),
+    setCompanyStage: (companyStage) => set({ companyStage }),
+    markLeadCaptureVisible: () =>
+      set((state) => ({
+        leadCaptureVisibleAt: state.leadCaptureVisibleAt ?? Date.now()
+      })),
+    getLeadCaptureVisibleForMs: () => {
+      const visibleAt = get().leadCaptureVisibleAt;
+      return visibleAt ? Date.now() - visibleAt : 0;
+    },
+    getAuditInput: () => {
+      const state = get();
+
+      return {
+        tools: state.tools,
+        totalTeamSize: state.totalTeamSize,
+        primaryUseCase: state.primaryUseCase,
+        companyStage: state.companyStage
+      };
     }
-  )
+  })
 );

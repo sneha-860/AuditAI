@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -127,6 +127,18 @@
     animation: audit-pulse 1.5s ease-in-out infinite;
   }
 
+  .audit-shake {
+    animation: audit-shake 400ms ease-in-out;
+  }
+
+  .audit-marquee {
+    animation: audit-marquee 24s linear infinite;
+  }
+
+  .audit-marquee:hover {
+    animation-play-state: paused;
+  }
+
   .content-wrapper {
     max-width: 780px;
     margin: 0 auto;
@@ -144,5 +156,17 @@
   @keyframes audit-pulse {
     0%, 100% { opacity: 0.4; }
     50% { opacity: 1; }
+  }
+
+  @keyframes audit-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+  }
+
+  @keyframes audit-marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
   }
 }

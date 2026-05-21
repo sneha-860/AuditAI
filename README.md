@@ -10,7 +10,7 @@ Production URL: `https://credex-assignment-vercel.vercel.app/`
 - React
 - TypeScript
 - Tailwind CSS
-- Zustand for persisted audit form state
+- Zustand for in-session audit form state
 - Radix/shadcn-style form controls
 - Supabase for lead and share-report storage
 - Resend for report email delivery
@@ -133,7 +133,7 @@ Recommended Vercel flow:
 
 - `lib/auditEngine.ts` is deterministic and is the source of truth for savings, recommendations, and health score.
 - `lib/pricing.ts` owns tool pricing and plan definitions.
-- `lib/store.ts` owns persisted audit form state and normalizes cached values across releases.
+- `lib/store.ts` owns in-session audit form state; fresh page loads start from default entries.
 - `components/SpendForm.tsx` renders the audit input experience.
 - `components/AuditResults.tsx` renders the private results page.
 - `components/LeadCapture.tsx` handles report email capture and share-link success state.

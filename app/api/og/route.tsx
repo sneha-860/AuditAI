@@ -1,8 +1,11 @@
 import { ImageResponse } from "next/og";
+import { corsPreflight, withCors } from "@/lib/cors";
 
 export const runtime = "edge";
 
-export async function GET(request: Request) {
+export const OPTIONS = corsPreflight;
+
+export const GET = withCors(async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const savings = searchParams.get("savings");
 
@@ -104,4 +107,4 @@ export async function GET(request: Request) {
     ),
     { width: 1200, height: 630 }
   );
-}
+});

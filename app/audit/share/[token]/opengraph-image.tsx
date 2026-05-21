@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { getSharedAuditReport } from "@/lib/sharedAudit";
+import { getSiteHost } from "@/lib/siteUrl";
 
 export const size = {
   width: 1200,
@@ -18,6 +19,7 @@ export default async function Image({ params }: SharedAuditImageProps) {
   const monthlySavings = Math.round(report?.totalMonthlySavings ?? 0);
   const annualSavings = monthlySavings * 12;
   const toolsAudited = report?.toolResults.length ?? 0;
+  const siteHost = getSiteHost();
 
   return new ImageResponse(
     (
@@ -56,7 +58,7 @@ export default async function Image({ params }: SharedAuditImageProps) {
             />
             <div style={{ fontSize: 28, fontWeight: 700 }}>AuditAI</div>
           </div>
-          <div style={{ fontSize: 22, color: "#666666" }}>auditai.vercel.app</div>
+          <div style={{ fontSize: 22, color: "#666666" }}>{siteHost}</div>
         </div>
 
         <div

@@ -1,33 +1,37 @@
 import type { Metadata } from "next";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
+import { getSiteOrigin } from "@/lib/siteUrl";
 import "./globals.css";
 
-const productionUrl = "https://auditai.vercel.app";
+const siteOrigin = getSiteOrigin();
+const title = "AuditAI - Stop Overpaying for AI Tools";
+const description = "Free 60-second audit shows exactly where your startup is wasting money on AI subscriptions.";
+const ogImageUrl = `${siteOrigin}/opengraph-image`;
 
 export const metadata: Metadata = {
-  title: "AuditAI - Stop Overpaying for AI Tools",
-  description: "Free 60-second audit shows exactly where your startup is wasting money on AI subscriptions.",
-  metadataBase: new URL(productionUrl),
+  title,
+  description,
+  metadataBase: new URL(siteOrigin),
   openGraph: {
-    title: "AuditAI - Stop Overpaying for AI Tools",
-    description: "Free 60-second audit shows exactly where your startup is wasting money on AI subscriptions.",
-    url: productionUrl,
+    title,
+    description,
+    url: siteOrigin,
     siteName: "AuditAI",
     images: [
       {
-        url: "/opengraph-image",
+        url: ogImageUrl,
         width: 1200,
         height: 630,
-        alt: "AuditAI - Stop Overpaying for AI Tools"
+        alt: title
       }
     ],
     type: "website"
   },
   twitter: {
     card: "summary_large_image",
-    title: "AuditAI - Stop Overpaying for AI Tools",
-    description: "Free 60-second audit shows exactly where your startup is wasting money on AI subscriptions.",
-    images: ["/opengraph-image"]
+    title,
+    description,
+    images: [ogImageUrl]
   }
 };
 

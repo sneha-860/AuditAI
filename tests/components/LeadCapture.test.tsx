@@ -54,6 +54,7 @@ const report: AuditReport = {
   recommendations: [],
   summary: "Claude Pro is a good fit."
 };
+const shareAuditId = "550e8400-e29b-41d4-a716-446655440000";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -88,7 +89,7 @@ describe("LeadCapture", () => {
     const user = userEvent.setup();
     vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
-      json: async () => ({ ok: true, shareUrl: "/audit/share/test-token" })
+      json: async () => ({ ok: true, shareUrl: `/audit/share/${shareAuditId}` })
     } as Response);
 
     render(<LeadCapture input={input} report={report} summary={report.summary} />);
@@ -97,6 +98,6 @@ describe("LeadCapture", () => {
     await user.click(screen.getByRole("button", { name: /send my report/i }));
 
     expect(await screen.findByText("Report sent")).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByLabelText("Shareable audit URL")).toHaveValue("http://localhost:3000/audit/share/test-token"));
+    await waitFor(() => expect(screen.getByLabelText("Shareable audit URL")).toHaveValue(`http://localhost:3000/audit/share/${shareAuditId}`));
   });
 });

@@ -9,7 +9,7 @@ Date: 2026-05-11
 - [x] TypeScript passes with `npm run type-check` on 2026-05-11.
 - [x] Production build passes with `npm run build` on 2026-05-11. Note: Next.js warns that using edge runtime on a page disables static generation for that page.
 - [x] CI workflow exists at `.github/workflows/ci.yml` and runs install, lint, type-check, tests, and a JSON-based test count check.
-- [x] Form state persistence is implemented through the Zustand store in `lib/store.ts`.
+- [x] Form state is kept in-memory through the Zustand store in `lib/store.ts`.
 - [x] Audit engine handles covered edge cases: all-free tools, single optimal tool, redundant tools, unused seats, high-value spend, low API spend, and savings formatting.
 - [x] AI summary has a deterministic fallback in `lib/auditSummary.ts` when Anthropic is unavailable.
 - [x] Environment variables are documented in `README.md` and secrets are read from environment variables in server routes.
@@ -28,7 +28,7 @@ Date: 2026-05-11
 ## Manual Browser Checks
 
 - [ ] Mobile responsive at 375px width: landing page, audit form, results page, lead capture success state.
-- [ ] Form state persists after refresh while editing tools, plans, seats, and manual spend.
+- [ ] Form state resets to default entries after a fresh page load.
 - [ ] AI summary displays a loading/skeleton state before final or fallback summary.
 - [ ] Audit engine handles browser edge cases: all free, 1 tool, and 20 tools/every available tool enabled.
 - [ ] Share link copy button copies an absolute URL.
