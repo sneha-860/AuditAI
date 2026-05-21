@@ -8,17 +8,20 @@ import { SpendForm } from "@/components/SpendForm";
 const HOW_IT_WORKS = [
   {
     title: "Map your AI stack",
-    body: "Choose the subscriptions, APIs, and seats your team pays for today.",
+    body: "Add subscriptions, API spend, plans, and seat counts in one guided audit form.",
+    detail: "No spreadsheet cleanup",
     icon: ClipboardList
   },
   {
     title: "Spot wasted spend",
-    body: "AuditAI flags overlap, unused seats, and plans that are larger than your team needs.",
+    body: "We compare your stack against overlap rules, team size, and pricing logic.",
+    detail: "Duplicate tools + unused seats",
     icon: BarChart3
   },
   {
     title: "Act with a clear report",
-    body: "Review prioritized savings, then share the report with finance or founders.",
+    body: "Get a prioritized savings list and an AI-written summary for the next decision.",
+    detail: "Ready for finance review",
     icon: Share2
   }
 ];
@@ -93,23 +96,29 @@ export default function LandingPage() {
             AuditAI turns your current tools, seats, and plans into a prioritized savings report your team can actually act on.
           </p>
         </div>
-        <div className="relative grid gap-4 md:grid-cols-3">
-          <div className="pointer-events-none absolute left-[16.6%] right-[16.6%] top-10 hidden h-px bg-[#222] md:block" aria-hidden="true" />
+        <div className="grid gap-4 lg:grid-cols-3">
           {HOW_IT_WORKS.map((step, index) => {
             const Icon = step.icon;
             return (
-              <div key={step.title} className="relative rounded-lg border-[0.5px] border-[#242424] bg-[#101010] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.18)] transition hover:-translate-y-1 hover:border-[#2f2f2f] hover:bg-[#121212]">
-                <div className="mb-10 flex items-center justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full border-[0.5px] border-[#262626] bg-[#0b0b0b] text-[12px] font-semibold text-[#777]">
-                    0{index + 1}
+              <article key={step.title} className="group relative overflow-hidden rounded-lg border-[0.5px] border-[#252525] bg-[#101010] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.18)] transition hover:-translate-y-1 hover:border-[#1a4030]">
+                <div className="absolute inset-x-0 top-0 h-px bg-[#00e87a]/0 transition group-hover:bg-[#00e87a]/60" aria-hidden="true" />
+                <div className="flex items-start gap-4">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border-[0.5px] border-[#1a4030] bg-[#0d1f18] shadow-[0_0_24px_rgba(0,232,122,0.08)]">
+                    <Icon className="h-5 w-5 text-[#00e87a]" aria-hidden="true" />
                   </span>
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg border-[0.5px] border-[#1a4030] bg-[#0d1f18] shadow-[0_0_24px_rgba(0,232,122,0.08)]">
-                    <Icon className="h-[18px] w-[18px] text-[#00e87a]" aria-hidden="true" />
-                  </span>
+                  <div className="min-w-0">
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#00e87a]">Step 0{index + 1}</span>
+                      <span className="h-px flex-1 bg-[#242424]" aria-hidden="true" />
+                    </div>
+                    <h3 className="text-[18px] font-semibold text-white">{step.title}</h3>
+                    <p className="mt-3 text-[14px] leading-[1.7] text-[#9a9a9a]">{step.body}</p>
+                    <p className="mt-5 inline-flex rounded-full border-[0.5px] border-[#252525] bg-[#0b0b0b] px-3 py-1 text-[11px] font-medium text-[#777]">
+                      {step.detail}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="mb-3 text-[18px] font-semibold text-white">{step.title}</h3>
-                <p className="text-[14px] leading-[1.7] text-[#8f8f8f]">{step.body}</p>
-              </div>
+              </article>
             );
           })}
         </div>
